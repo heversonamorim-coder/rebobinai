@@ -78,3 +78,33 @@ model GiftAsset {
 
   @@index([giftId, order])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: promotions (dono da tabela Plan)
+// Preço de lançamento dirigido por dado (compliance CDC/Procon): o preço "de"
+// tachado é o fullPrice real e futuro; launchEndsAt é a data em que o preço
+// sobe. Enquanto launchEndsAt for nulo, mostra-se "preço de lançamento" sem
+// afirmar prazo — nada de deadline fabricado.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum PlanKey {
+  free
+  digital
+  forever
+  quadro
+}
+
+model Plan {
+  id           String    @id @default(cuid())
+  key          PlanKey   @unique
+  name         String
+  tagline      String?
+  fullPrice    Int // centavos — preço-alvo (cheio)
+  launchPrice  Int // centavos — preço de lançamento (== fullPrice quando sem promo)
+  launchEndsAt DateTime? // quando o preço sobe para fullPrice; nulo = sem prazo anunciado
+  features     String[] // itens inclusos no plano
+  active       Boolean   @default(true)
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}

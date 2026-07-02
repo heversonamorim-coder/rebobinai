@@ -1,4 +1,5 @@
 import type { Gift, GiftPayload, PublicGift } from './gift';
+import type { Plan } from './plans';
 
 /**
  * Cliente da API do presente (módulo gift). O guest cria e edita com o
@@ -54,6 +55,15 @@ export function updateGift(id: string, editToken: string, input: CreateGiftInput
     headers: { 'x-edit-token': editToken },
     body: JSON.stringify(input),
   });
+}
+
+/** Catálogo de planos (landing/checkout). Revalida de hora em hora (ISR). */
+export async function getPlans(): Promise<Plan[]> {
+  try {
+    return await request<Plan[]>('/plans', { next: { revalidate: 3600 } });
+  } catch {
+    return [];
+  }
 }
 
 /** Leitura pública por slug (SSR de /p/:slug). Retorna null quando não existe. */
