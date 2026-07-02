@@ -26,6 +26,10 @@ const envSchema = z.object({
   ASAAS_WEBHOOK_TOKEN: z.string().optional(),
   ASAAS_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
 
+  // E-mail transacional (módulo notifications — F1-8; Resend)
+  RESEND_API_KEY: z.string().optional(),
+  MAIL_FROM: z.string().default('Rebobinaí ◄◄ <no-reply@rebobinai.app>'),
+
   // IA (módulo ai — F3-1)
   ANTHROPIC_API_KEY: z.string().optional(),
 

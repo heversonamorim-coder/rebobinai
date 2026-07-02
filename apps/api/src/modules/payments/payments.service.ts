@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { $Enums } from '@prisma/client';
 import { GiftService } from '../gift/gift.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PlanService } from '../promotions/plan.service';
 import { AsaasClient } from './asaas.client';
 import { OrderRepository } from './order.repository';
@@ -22,6 +23,7 @@ export class PaymentsService {
     private readonly orders: OrderRepository,
     private readonly plans: PlanService,
     private readonly gifts: GiftService,
+    private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -91,7 +93,9 @@ export class PaymentsService {
     await this.orders.update(order.id, { gatewayId: payment.id, status });
     // Cartão aprovado na hora ativa o presente já; o webhook confirma de novo
     // (idempotente).
-    if (status === 'paid') await this.gifts.markPaid(dto.giftId);
+    if (status === 'paid') {
+      await this.fulfill({ giftId: order.giftId, customerEmail: order.customerEmail });
+    }
     return { orderId: order.id, status };
   }
 
@@ -124,8 +128,27 @@ export class PaymentsService {
     if (order.status === 'paid') return { ok: true, alreadyPaid: true };
 
     await this.orders.update(order.id, { status: 'paid', paidAt: new Date() });
-    await this.gifts.markPaid(order.giftId);
+    await this.fulfill(order);
     return { ok: true, activated: true };
+  }
+
+  /**
+   * Ativa o presente (slug + remove marca) e dispara o e-mail com o link.
+   * Falha de e-mail não derruba o fluxo — o pagamento já foi processado.
+   */
+  private async fulfill(order: { giftId: string; customerEmail: string | null }) {
+    const gift = await this.gifts.markPaid(order.giftId);
+    if (order.customerEmail && gift.slug) {
+      const base = this.config.get<string>('WEB_URL') ?? 'http://localhost:3000';
+      const payload = gift.payload as unknown as { title?: string } | null;
+      const title = payload?.title || 'sua rebobinada';
+      try {
+        await this.notifications.sendGiftLink(order.customerEmail, title, `${base}/p/${gift.slug}`);
+      } catch (e) {
+        this.logger.error(`Falha ao enviar e-mail do pedido: ${e instanceof Error ? e.message : e}`);
+      }
+    }
+    return gift;
   }
 
   /** Valida a posse do rascunho e resolve o plano/preço vigente. */
