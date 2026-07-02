@@ -30,6 +30,15 @@ export class GiftRepository {
     return this.prisma.gift.update({ where: { id }, data, include: this.withAssets });
   }
 
+  /** Incremento atômico do contador de views da página pública (F1-3). */
+  incrementViews(slug: string) {
+    return this.prisma.gift.update({
+      where: { slug },
+      data: { viewCount: { increment: 1 } },
+      include: this.withAssets,
+    });
+  }
+
   addAsset(data: Prisma.GiftAssetUncheckedCreateInput) {
     return this.prisma.giftAsset.create({ data });
   }

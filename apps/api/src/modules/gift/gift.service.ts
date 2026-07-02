@@ -26,6 +26,21 @@ export class GiftService {
     return gift;
   }
 
+  /**
+   * Presente público por slug (página /p/:slug). Só existe quando pago — o slug
+   * só é gerado ao pagar (anti-abuso). Registra a view (contador ao vivo) e
+   * devolve a projeção pública, sem o editToken.
+   */
+  async getPublicBySlug(slug: string) {
+    const gift = await this.repo.findBySlug(slug);
+    if (!gift || gift.status !== 'paid') {
+      throw new NotFoundException('Presente não encontrado');
+    }
+    const updated = await this.repo.incrementViews(slug);
+    const { editToken: _omit, ...pub } = updated;
+    return pub;
+  }
+
   async update(id: string, editToken: string, dto: UpdateGiftDto) {
     const gift = await this.mustEdit(id, editToken);
     return this.repo.update(id, {

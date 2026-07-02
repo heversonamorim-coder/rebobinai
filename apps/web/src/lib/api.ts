@@ -1,4 +1,4 @@
-import type { Gift, GiftPayload } from './gift';
+import type { Gift, GiftPayload, PublicGift } from './gift';
 
 /**
  * Cliente da API do presente (módulo gift). O guest cria e edita com o
@@ -54,4 +54,16 @@ export function updateGift(id: string, editToken: string, input: CreateGiftInput
     headers: { 'x-edit-token': editToken },
     body: JSON.stringify(input),
   });
+}
+
+/** Leitura pública por slug (SSR de /p/:slug). Retorna null quando não existe. */
+export async function getPublicGift(slug: string): Promise<PublicGift | null> {
+  try {
+    return await request<PublicGift>(`/public/gifts/${encodeURIComponent(slug)}`, {
+      cache: 'no-store',
+    });
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
 }
