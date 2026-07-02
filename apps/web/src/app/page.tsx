@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Logo, Osd } from '@rebobinai/ui';
 
 export default function Home() {
@@ -9,8 +10,14 @@ export default function Home() {
         <span className="rb-rew">◄◄</span> rebobina a nossa história{' '}
         <b className="text-[var(--magenta)] font-normal">· com IA</b>
       </p>
-      <p className="mt-12 font-[family-name:var(--mono)] text-xs tracking-[0.3em] uppercase text-[var(--dim)]">
-        em construção · rebobinai.app
+      <Link
+        href="/criar"
+        className="mt-12 rounded-lg bg-magenta px-8 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
+      >
+        criar meu presente ►
+      </Link>
+      <p className="mt-8 font-[family-name:var(--mono)] text-xs tracking-[0.3em] uppercase text-[var(--dim)]">
+        grátis pra criar e ver a prévia · rebobinai.app
       </p>
     </main>
   );
