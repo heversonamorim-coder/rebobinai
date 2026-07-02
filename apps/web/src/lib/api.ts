@@ -6,7 +6,9 @@ import type { Plan } from './plans';
  * `editToken` devolvido na criação, enviado no header `x-edit-token`.
  * Em produção, defina NEXT_PUBLIC_API_URL para a URL da API no Railway.
  */
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+// Normaliza a base: remove barra(s) no final para não gerar "//gifts" quando
+// a env vier com barra sobrando (ex.: "https://api.railway.app/").
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '');
 
 export class ApiError extends Error {
   constructor(
