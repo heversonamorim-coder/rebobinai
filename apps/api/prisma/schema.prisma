@@ -56,6 +56,7 @@ model Gift {
   occasion       String? // ex.: "dia-dos-pais", "namorada"
   payload        Json       @default("{}") // conteúdo (título, carta, timeline...)
   watermark      Boolean    @default(true) // removida ao pagar
+  viewCount      Int        @default(0) // contador ao vivo da página pública (F1-3)
   paidAt         DateTime?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

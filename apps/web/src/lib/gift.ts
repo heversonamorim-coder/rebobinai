@@ -33,10 +33,25 @@ export interface Gift {
   occasion: string | null;
   payload: GiftPayload;
   watermark: boolean;
+  viewCount: number;
   editToken: string;
   assets: GiftAsset[];
   createdAt: string;
   updatedAt: string;
+  paidAt: string | null;
+}
+
+/** Projeção pública do presente (sem editToken) — usada no SSR de /p/:slug. */
+export interface PublicGift {
+  id: string;
+  slug: string;
+  status: GiftStatus;
+  occasion: string | null;
+  payload: GiftPayload;
+  watermark: boolean;
+  viewCount: number;
+  assets: GiftAsset[];
+  createdAt: string;
   paidAt: string | null;
 }
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { GiftController } from './gift.controller';
 import { GiftRepository } from './gift.repository';
 import { GiftService } from './gift.service';
+import { PublicGiftController } from './public-gift.controller';
 
 /**
  * Bounded context: gift
@@ -11,7 +12,7 @@ import { GiftService } from './gift.service';
  * fica encapsulado no GiftRepository.
  */
 @Module({
-  controllers: [GiftController],
+  controllers: [GiftController, PublicGiftController],
   providers: [GiftService, GiftRepository],
   exports: [GiftService],
 })
