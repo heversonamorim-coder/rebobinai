@@ -39,6 +39,29 @@ export class GiftRepository {
     });
   }
 
+  /**
+   * Ativa o presente ao pagar (F1-6): status=paid, remove marca, gera slug e
+   * grava o evento gift.paid no outbox — tudo na MESMA transação.
+   */
+  markPaid(giftId: string, slug: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const gift = await tx.gift.update({
+        where: { id: giftId },
+        data: { status: 'paid', watermark: false, slug, paidAt: new Date() },
+        include: this.withAssets,
+      });
+      await tx.outboxEvent.create({
+        data: {
+          eventType: 'gift.paid',
+          aggregateType: 'Gift',
+          aggregateId: giftId,
+          payload: { slug },
+        },
+      });
+      return gift;
+    });
+  }
+
   addAsset(data: Prisma.GiftAssetUncheckedCreateInput) {
     return this.prisma.giftAsset.create({ data });
   }

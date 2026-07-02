@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { Prisma } from '@prisma/client';
 import { GiftRepository } from './gift.repository';
 import { AddAssetDto, CreateGiftDto, UpdateGiftDto } from './dto/gift.schemas';
+import { generateSlug } from './slug';
 
 /**
  * Regras de domínio do presente. Guest-first: o rascunho é criado sem login e
@@ -64,6 +65,29 @@ export class GiftService {
     const { count } = await this.repo.removeAsset(id, assetId);
     if (count === 0) throw new NotFoundException('Asset não encontrado');
     return { removed: count };
+  }
+
+  /**
+   * Ativa o presente ao confirmar o pagamento (F1-6). Idempotente: se já está
+   * pago, apenas retorna. Gera um slug único com retry em caso de colisão.
+   */
+  async markPaid(giftId: string) {
+    const gift = await this.repo.findById(giftId);
+    if (!gift) throw new NotFoundException('Presente não encontrado');
+    if (gift.status === 'paid') return gift;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        return await this.repo.markPaid(giftId, generateSlug());
+      } catch (e) {
+        const isSlugCollision =
+          e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+        if (isSlugCollision && attempt < 4) continue;
+        throw e;
+      }
+    }
+    // inatingível — o loop acima retorna ou relança
+    throw new Error('Não foi possível gerar um slug único para o presente.');
   }
 
   /** Carrega o presente, valida o editor e garante que ainda é um rascunho. */

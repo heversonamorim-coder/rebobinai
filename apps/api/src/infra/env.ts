@@ -24,6 +24,7 @@ const envSchema = z.object({
   // Asaas (módulo payments — F1-5/F1-6)
   ASAAS_API_KEY: z.string().optional(),
   ASAAS_WEBHOOK_TOKEN: z.string().optional(),
+  ASAAS_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
 
   // IA (módulo ai — F3-1)
   ANTHROPIC_API_KEY: z.string().optional(),

@@ -57,6 +57,60 @@ export function updateGift(id: string, editToken: string, input: CreateGiftInput
   });
 }
 
+export type PlanKeyPaid = 'digital' | 'forever' | 'quadro';
+
+export interface CheckoutCustomer {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+}
+
+export interface PixCheckoutResult {
+  orderId: string;
+  status: string;
+  pix: { qrImage: string; copyPaste: string; expiresAt: string | null };
+}
+
+export interface CardCheckoutResult {
+  orderId: string;
+  status: string;
+}
+
+export interface OrderStatus {
+  orderId: string;
+  status: string;
+}
+
+export function checkoutPix(input: {
+  giftId: string;
+  editToken: string;
+  planKey: PlanKeyPaid;
+  customer: CheckoutCustomer;
+}): Promise<PixCheckoutResult> {
+  return request<PixCheckoutResult>('/checkout/pix', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function checkoutCard(input: {
+  giftId: string;
+  editToken: string;
+  planKey: PlanKeyPaid;
+  customer: CheckoutCustomer;
+  card: { holderName: string; number: string; expiryMonth: string; expiryYear: string; ccv: string };
+  holder: { postalCode: string; addressNumber: string; phone: string };
+}): Promise<CardCheckoutResult> {
+  return request<CardCheckoutResult>('/checkout/card', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function getOrderStatus(orderId: string): Promise<OrderStatus> {
+  return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
+}
+
 /** Catálogo de planos (landing/checkout). Revalida de hora em hora (ISR). */
 export async function getPlans(): Promise<Plan[]> {
   try {
