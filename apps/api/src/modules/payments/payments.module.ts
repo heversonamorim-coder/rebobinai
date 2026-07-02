@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GiftModule } from '../gift/gift.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { PromotionsModule } from '../promotions/promotions.module';
 import { AsaasClient } from './asaas.client';
 import { AsaasWebhookController } from './asaas-webhook.controller';
@@ -13,7 +14,7 @@ import { PaymentsService } from './payments.service';
  * presente ao pagar) e PlanService (resolver o preço). Não toca tabelas alheias.
  */
 @Module({
-  imports: [GiftModule, PromotionsModule],
+  imports: [GiftModule, PromotionsModule, NotificationsModule],
   controllers: [CheckoutController, AsaasWebhookController],
   providers: [PaymentsService, AsaasClient, OrderRepository],
   exports: [PaymentsService],

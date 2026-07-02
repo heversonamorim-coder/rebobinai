@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { EmailClient } from './email.client';
+import { NotificationsService } from './notifications.service';
 
 /**
  * Bounded context: notifications
@@ -6,9 +8,7 @@ import { Module } from '@nestjs/common';
  * Comunicação apenas por serviços internos exportados e eventos de domínio (outbox).
  */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  providers: [NotificationsService, EmailClient],
+  exports: [NotificationsService],
 })
 export class NotificationsModule {}
