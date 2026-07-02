@@ -1,0 +1,30 @@
+// Rebobinaí ◄◄ — schema Prisma (apps/api)
+// Regra do monólito modular: cada tabela tem UM módulo dono; nunca exponha
+// o PrismaClient cru entre bounded contexts — cada módulo define seus repositórios.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Padrão outbox — infraestrutura compartilhada de eventos de domínio.
+/// Módulos gravam eventos aqui NA MESMA TRANSAÇÃO da escrita de domínio;
+/// um relay (BullMQ) publica e marca processedAt. Ex.: gift.paid, gift.viewed, coupon.redeemed.
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  eventType     String // ex.: "gift.paid"
+  aggregateType String // ex.: "Gift"
+  aggregateId   String
+  payload       Json
+  createdAt     DateTime  @default(now())
+  processedAt   DateTime?
+  attempts      Int       @default(0)
+  lastError     String?
+
+  @@index([processedAt, createdAt])
+  @@index([aggregateType, aggregateId])
+}

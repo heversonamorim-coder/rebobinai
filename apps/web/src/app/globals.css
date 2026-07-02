@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import '@rebobinai/ui/tokens.css';
+
+body {
+  background: var(--tape);
+  color: var(--glow);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}

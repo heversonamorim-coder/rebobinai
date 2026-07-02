@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rebobinaí · Identidade de Marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tape:#0A0713;
+    --tape-2:#150B26;
+    --panel:#1C1033;
+    --magenta:#FF2E9A;
+    --cyan:#18E9FF;
+    --purple:#9A5CFF;
+    --glow:#F1ECFF;
+    --dim:#A08FC4;
+    --line:#ffffff1a;
+    --display:"Chakra Petch",sans-serif;
+    --body:"Space Grotesk",system-ui,sans-serif;
+    --mono:"Space Mono",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--tape);color:var(--glow);font-family:var(--body);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;line-height:1.5;
+  }
+
+  /* ===== CRT / VHS atmosphere ===== */
+  .scan{position:fixed;inset:0;z-index:50;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);
+    mix-blend-mode:multiply;opacity:.7}
+  .vignette{position:fixed;inset:0;z-index:49;pointer-events:none;
+    background:radial-gradient(120% 80% at 50% 40%,transparent 55%,#000a 100%)}
+  .grain{position:fixed;inset:0;z-index:48;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  .wrap{max-width:960px;margin:0 auto;padding:0 clamp(20px,5vw,40px);position:relative;z-index:1}
+  section{padding:clamp(48px,9vw,88px) 0;border-bottom:1px solid var(--line)}
+
+  .eyebrow{font-family:var(--mono);font-size:.68rem;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--cyan);display:flex;align-items:center;gap:10px;margin-bottom:1.6rem}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--magenta)}
+  h2.title{font-family:var(--display);font-weight:600;font-size:clamp(1.5rem,5vw,2.2rem);
+    letter-spacing:.01em;line-height:1.1}
+  p.note{color:var(--dim);max-width:56ch;margin-top:1rem;font-size:1.02rem}
+
+  /* ===== HERO ===== */
+  .hero{min-height:92svh;display:flex;flex-direction:column;justify-content:center;
+    text-align:center;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+  .hero .osd{position:absolute;top:clamp(18px,5vw,34px);left:0;right:0;
+    display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;
+    letter-spacing:.2em;color:var(--dim);padding:0 clamp(20px,5vw,40px)}
+  .hero .osd .rec{color:var(--magenta)}
+  .hero .osd .rec::before{content:"● ";}
+
+  .logo{font-family:var(--display);font-weight:700;
+    font-size:clamp(3rem,15vw,7.5rem);letter-spacing:-.01em;line-height:1;
+    position:relative;display:inline-block;color:var(--glow)}
+  .logo .ai{color:var(--cyan)}
+  /* chromatic aberration = the signature */
+  .logo{text-shadow:.045em 0 var(--magenta),-.045em 0 var(--cyan);animation:chroma 5s steps(1) infinite}
+  @keyframes chroma{
+    0%,92%,100%{text-shadow:.045em 0 var(--magenta),-.045em 0 var(--cyan)}
+    93%{text-shadow:.12em 0 var(--magenta),-.09em 0 var(--cyan);transform:translateX(-2px)}
+    95%{text-shadow:-.06em 0 var(--magenta),.09em 0 var(--cyan);transform:translateX(3px)}
+    97%{text-shadow:.045em 0 var(--magenta),-.045em 0 var(--cyan);transform:none}
+  }
+  .tagline{font-family:var(--mono);margin-top:2rem;color:var(--glow);font-size:clamp(.9rem,3.6vw,1.15rem);
+    letter-spacing:.04em}
+  .tagline b{color:var(--magenta);font-weight:400}
+  .rew{font-family:var(--display);color:var(--cyan);letter-spacing:.1em}
+
+  /* ===== LOGO SYSTEM ===== */
+  .grid2{display:grid;grid-template-columns:1fr;gap:22px;margin-top:2rem}
+  @media(min-width:680px){.grid2{grid-template-columns:1fr 1fr}}
+  .card{background:linear-gradient(160deg,var(--tape-2),var(--tape));border:1px solid var(--line);
+    border-radius:14px;padding:clamp(22px,5vw,34px);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:16px;min-height:210px;position:relative;overflow:hidden}
+  .card .lab{font-family:var(--mono);font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--dim);position:absolute;top:14px;left:16px}
+  /* the ◄◄ app mark / avatar */
+  .mark{width:120px;height:120px;border-radius:28px;display:grid;place-items:center;
+    background:conic-gradient(from 210deg,var(--magenta),var(--purple),var(--cyan),var(--magenta));
+    box-shadow:0 0 40px -8px var(--purple)}
+  .mark span{font-family:var(--display);font-weight:700;font-size:2.6rem;color:var(--tape);
+    letter-spacing:-.08em;transform:translateX(-2px)}
+  .wordmark-sm{font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,7vw,2.4rem);
+    color:var(--glow);text-shadow:.03em 0 var(--magenta),-.03em 0 var(--cyan)}
+  .wordmark-sm .ai{color:var(--cyan);text-shadow:none}
+  .mono-mark{font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,7vw,2.4rem);color:var(--glow)}
+  .mono-mark.inv{color:var(--tape);background:var(--glow);padding:.15em .4em;border-radius:6px}
+
+  /* ===== PALETTE ===== */
+  .swatches{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:2rem}
+  @media(min-width:680px){.swatches{grid-template-columns:repeat(3,1fr)}}
+  .sw{border-radius:12px;border:1px solid var(--line);overflow:hidden}
+  .sw .chip{height:88px}
+  .sw .meta{padding:12px 14px;font-family:var(--mono);font-size:.72rem;background:var(--tape-2)}
+  .sw .meta .nm{color:var(--glow);letter-spacing:.06em}
+  .sw .meta .hex{color:var(--dim);text-transform:uppercase;margin-top:3px}
+
+  /* ===== TYPE ===== */
+  .type-row{padding:22px 0;border-bottom:1px dashed var(--line)}
+  .type-row:last-child{border-bottom:0}
+  .type-row .role{font-family:var(--mono);font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan)}
+  .type-row .name{color:var(--dim);font-family:var(--mono);font-size:.64rem;float:right}
+  .spec-display{font-family:var(--display);font-weight:700;font-size:clamp(1.8rem,7vw,2.6rem);margin-top:8px}
+  .spec-body{font-family:var(--body);font-size:clamp(1.1rem,4vw,1.35rem);margin-top:8px;font-weight:500}
+  .spec-mono{font-family:var(--mono);font-size:clamp(1rem,4vw,1.2rem);margin-top:8px;letter-spacing:.02em;color:var(--cyan)}
+
+  /* ===== MOTIFS ===== */
+  .motifs{display:grid;grid-template-columns:1fr;gap:16px;margin-top:2rem}
+  @media(min-width:680px){.motifs{grid-template-columns:1fr 1fr}}
+  .motif{border:1px solid var(--line);border-radius:12px;padding:22px;background:var(--tape-2)}
+  .motif h4{font-family:var(--display);font-weight:600;font-size:1.05rem;margin-bottom:6px}
+  .motif p{color:var(--dim);font-size:.92rem}
+  .osd-demo{font-family:var(--mono);color:var(--glow);font-size:.85rem;letter-spacing:.15em;
+    margin-top:14px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .osd-demo .rew{color:var(--cyan)}
+  .osd-demo .rec{color:var(--magenta)}
+  .bar-demo{height:36px;margin-top:14px;border-radius:5px;
+    background:repeating-linear-gradient(90deg,var(--magenta) 0 8px,var(--purple) 8px 16px,var(--cyan) 16px 24px)}
+
+  /* ===== APPLICATIONS ===== */
+  .apps{display:grid;grid-template-columns:1fr;gap:18px;margin-top:2rem}
+  @media(min-width:680px){.apps{grid-template-columns:1fr 1fr}}
+  .app{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--tape-2)}
+  .app .cap{font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--dim);padding:12px 16px;border-top:1px solid var(--line)}
+  /* avatar app */
+  .app-avatar{display:flex;align-items:center;gap:16px;padding:22px}
+  .avatar-circle{width:66px;height:66px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    background:conic-gradient(from 210deg,var(--magenta),var(--purple),var(--cyan),var(--magenta))}
+  .avatar-circle span{font-family:var(--display);font-weight:700;font-size:1.5rem;color:var(--tape);transform:translateX(-1px)}
+  .app-avatar .handle{font-family:var(--body);font-weight:600;font-size:1.05rem}
+  .app-avatar .sub{color:var(--dim);font-size:.85rem}
+  /* gift tile */
+  .app-gift{aspect-ratio:9/11;background:
+    radial-gradient(80% 60% at 50% 15%,#ff2e9a33,transparent 70%),
+    radial-gradient(80% 60% at 50% 100%,#18e9ff2b,transparent 70%),var(--tape);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:22px;text-align:center}
+  .app-gift .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.3em;color:var(--cyan)}
+  .app-gift .h{font-family:var(--display);font-weight:700;font-size:clamp(1.3rem,6vw,1.8rem);
+    text-shadow:.03em 0 var(--magenta),-.03em 0 var(--cyan)}
+  .app-gift .play{width:48px;height:48px;border-radius:50%;background:var(--glow);display:grid;place-items:center}
+  .app-gift .play::after{content:"";border-left:15px solid var(--tape);border-top:9px solid transparent;
+    border-bottom:9px solid transparent;margin-left:3px}
+  /* story tile */
+  .app-story{aspect-ratio:9/11;position:relative;background:linear-gradient(200deg,var(--purple),var(--tape) 60%);
+    padding:18px;display:flex;flex-direction:column;justify-content:space-between}
+  .app-story .top{font-family:var(--mono);font-size:.68rem;letter-spacing:.15em;color:var(--glow);display:flex;justify-content:space-between}
+  .app-story .top .rec{color:var(--magenta)}
+  .app-story .mid{font-family:var(--display);font-weight:700;font-size:clamp(1.4rem,7vw,2rem);line-height:1.05}
+  .app-story .mid em{color:var(--cyan);font-style:normal}
+  .app-story .bottom{font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;color:var(--glow)}
+  .app-story .bottom .rew{color:var(--cyan)}
+
+  /* ===== VOICE ===== */
+  .taglines{list-style:none;margin-top:2rem;display:grid;gap:12px}
+  .taglines li{font-family:var(--display);font-weight:500;font-size:clamp(1.1rem,4.6vw,1.5rem);
+    padding:16px 18px;border:1px solid var(--line);border-radius:10px;background:var(--tape-2)}
+  .taglines li b{color:var(--magenta);font-weight:700}
+  .taglines li .ai{color:var(--cyan)}
+
+  footer{padding:40px 0 60px;text-align:center;font-family:var(--mono);font-size:.66rem;
+    letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
+
+  a{color:var(--cyan)}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:4px}
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important}
+    .logo{text-shadow:.045em 0 var(--magenta),-.045em 0 var(--cyan)!important;transform:none!important}
+  }
+</style>
+</head>
+<body>
+  <div class="grain"></div>
+  <div class="scan"></div>
+  <div class="vignette"></div>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="osd">
+      <span class="rec">REC</span>
+      <span>SP · 0:00:31</span>
+    </div>
+    <div class="wrap">
+      <div class="logo">REBOBIN<span class="ai">AÍ</span></div>
+      <div class="tagline"><span class="rew">◄◄</span> rebobina a nossa história <b>· com IA</b></div>
+    </div>
+  </header>
+
+  <!-- LOGO SYSTEM -->
+  <section><div class="wrap">
+    <div class="eyebrow">Sistema de logo</div>
+    <h2 class="title">Um nome, três estados</h2>
+    <p class="note">A assinatura é a aberração cromática — o vazamento magenta/cyan da fita. O <b style="color:var(--cyan)">AÍ</b> em ciano revela o duplo sentido: <b style="color:var(--cyan)">rebobina aí</b> + <b style="color:var(--cyan)">AI</b>. O mark <span style="font-family:var(--display);color:var(--cyan)">◄◄</span> é o rosto pequeno (avatar, favicon, app).</p>
+    <div class="grid2">
+      <div class="card"><span class="lab">Wordmark</span><div class="wordmark-sm">REBOBIN<span class="ai">AÍ</span></div></div>
+      <div class="card"><span class="lab">Mark · avatar</span><div class="mark"><span>◄◄</span></div></div>
+      <div class="card"><span class="lab">Positivo</span><div class="mono-mark">REBOBINAÍ</div></div>
+      <div class="card"><span class="lab">Negativo</span><div class="mono-mark inv">REBOBINAÍ</div></div>
+    </div>
+  </div></section>
+
+  <!-- PALETTE -->
+  <section><div class="wrap">
+    <div class="eyebrow">Paleta</div>
+    <h2 class="title">Y2K sobre fita preta</h2>
+    <p class="note">Magenta e cyan são o par da aberração cromática — nunca decorativos, sempre a distorção da fita. Roxo faz a ponte. Tudo vive sobre o preto de CRT.</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#FF2E9A"></div><div class="meta"><div class="nm">Magenta Tracking</div><div class="hex">#FF2E9A</div></div></div>
+      <div class="sw"><div class="chip" style="background:#18E9FF"></div><div class="meta"><div class="nm">Cyan Sinal</div><div class="hex">#18E9FF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#9A5CFF"></div><div class="meta"><div class="nm">Roxo Ponte</div><div class="hex">#9A5CFF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0A0713"></div><div class="meta"><div class="nm">Preto CRT</div><div class="hex">#0A0713</div></div></div>
+      <div class="sw"><div class="chip" style="background:#150B26"></div><div class="meta"><div class="nm">Painel</div><div class="hex">#150B26</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F1ECFF"></div><div class="meta"><div class="nm">Branco Glow</div><div class="hex">#F1ECFF</div></div></div>
+    </div>
+  </div></section>
+
+  <!-- TYPE -->
+  <section><div class="wrap">
+    <div class="eyebrow">Tipografia</div>
+    <h2 class="title">Técnica na frente, humana no corpo</h2>
+    <div style="margin-top:1.4rem">
+      <div class="type-row"><span class="role">Display · títulos e logo</span><span class="name">Chakra Petch</span>
+        <div class="spec-display">Rebobina a nossa história</div></div>
+      <div class="type-row"><span class="role">Corpo · texto e UI</span><span class="name">Space Grotesk</span>
+        <div class="spec-body">O presente digital que emociona em 5 minutos.</div></div>
+      <div class="type-row"><span class="role">OSD · dados e timecode</span><span class="name">Space Mono</span>
+        <div class="spec-mono">REW ◄◄ · SP · 0:00:00 · 2.567 DIAS</div></div>
+    </div>
+  </div></section>
+
+  <!-- MOTIFS -->
+  <section><div class="wrap">
+    <div class="eyebrow">Elementos de assinatura</div>
+    <h2 class="title">A linguagem da fita</h2>
+    <div class="motifs">
+      <div class="motif"><h4>Aberração cromática</h4><p>O deslocamento magenta/cyan aplicado ao wordmark e a títulos-chave. É a marca respirando.</p>
+        <div style="font-family:var(--display);font-weight:700;font-size:2rem;margin-top:12px;text-shadow:.05em 0 var(--magenta),-.05em 0 var(--cyan)">glitch</div></div>
+      <div class="motif"><h4>Scanlines + grão</h4><p>Toda superfície escura ganha as linhas de varredura e o ruído sutil do CRT. Já estão nesta página.</p>
+        <div class="bar-demo"></div></div>
+      <div class="motif"><h4>OSD do videocassete</h4><p>Rótulos, contadores e timecodes na cara do menu de VHS. Usa o contador de "dias juntos" como timecode vivo.</p>
+        <div class="osd-demo"><span class="rec">● REC</span><span class="rew">◄◄ REW</span><span>SP 0:00:31</span></div></div>
+      <div class="motif"><h4>Mark ◄◄ rebobinar</h4><p>O duplo-chevron é o ícone-âncora: avatar, favicon, botão de play/rewind, selo no quadro físico.</p>
+        <div style="font-family:var(--display);font-weight:700;font-size:2.2rem;margin-top:12px;color:var(--cyan)">◄◄</div></div>
+    </div>
+  </div></section>
+
+  <!-- APPLICATIONS -->
+  <section><div class="wrap">
+    <div class="eyebrow">Aplicações</div>
+    <h2 class="title">Como a marca aparece no mundo</h2>
+    <div class="apps">
+      <div class="app">
+        <div class="app-avatar">
+          <div class="avatar-circle"><span>◄◄</span></div>
+          <div><div class="handle">Rebobinaí</div><div class="sub">@rebobinai.app</div></div>
+        </div>
+        <div class="cap">Perfil · Instagram / TikTok</div>
+      </div>
+      <div class="app">
+        <div class="app-gift">
+          <div class="k">A NOSSA HISTÓRIA</div>
+          <div class="h">Jana ♡</div>
+          <div class="play"></div>
+        </div>
+        <div class="cap">Capa do presente digital</div>
+      </div>
+      <div class="app">
+        <div class="app-story">
+          <div class="top"><span class="rec">● REC</span><span>SP 0:00:07</span></div>
+          <div class="mid">rebobina<br>a de <em>vocês</em>.</div>
+          <div class="bottom"><span class="rew">◄◄</span> desliza pra criar · rebobinai.app</div>
+        </div>
+        <div class="cap">Story / anúncio</div>
+      </div>
+      <div class="app">
+        <div class="app-avatar" style="justify-content:center">
+          <div class="mono-mark inv" style="font-size:1.4rem">REBOBINAÍ ◄◄</div>
+        </div>
+        <div class="cap">Selo do quadro físico (upsell)</div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- VOICE -->
+  <section style="border-bottom:0"><div class="wrap">
+    <div class="eyebrow">Voz e assinaturas</div>
+    <h2 class="title">Quente, brincalhona, com um bip de tech</h2>
+    <p class="note">Fala como quem entrega um presente, não como uma startup. O tech é tempero, não o prato.</p>
+    <ul class="taglines">
+      <li><span class="rew" style="color:var(--cyan)">◄◄</span> Rebobina a <b>nossa história</b>.</li>
+      <li>Toda história merece um <b>replay</b>.</li>
+      <li>O presente que <b>rebobina</b> vocês — feito com <span class="ai">IA</span> em 5 minutos.</li>
+      <li>Aperta o play na <b>emoção</b>.</li>
+    </ul>
+  </div></section>
+
+  <footer>Rebobinaí · guia de marca v1 · ◄◄</footer>
+</body>
+</html>

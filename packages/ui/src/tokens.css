@@ -1,0 +1,160 @@
+/* ============================================================
+   Rebobinaí ◄◄ · Design tokens (guia de marca v1)
+   Estética: VHS / Y2K sobre preto CRT
+   ============================================================ */
+
+:root {
+  /* --- Paleta --- */
+  --tape: #0a0713; /* Preto CRT */
+  --tape-2: #150b26; /* Painel */
+  --panel: #1c1033; /* Painel elevado */
+  --magenta: #ff2e9a; /* Magenta Tracking */
+  --cyan: #18e9ff; /* Cyan Sinal */
+  --purple: #9a5cff; /* Roxo Ponte */
+  --glow: #f1ecff; /* Branco Glow */
+  --dim: #a08fc4; /* Texto secundário */
+  --line: #ffffff1a; /* Linhas/bordas */
+
+  /* --- Tipografia (variáveis preenchidas via next/font) --- */
+  --display: var(--font-display, 'Chakra Petch'), sans-serif;
+  --body: var(--font-body, 'Space Grotesk'), system-ui, sans-serif;
+  --mono: var(--font-mono, 'Space Mono'), monospace;
+}
+
+/* Tailwind v4: expõe os tokens como utilitários (bg-tape, text-cyan, font-display…) */
+@theme inline {
+  --color-tape: var(--tape);
+  --color-tape-2: var(--tape-2);
+  --color-panel: var(--panel);
+  --color-magenta: var(--magenta);
+  --color-cyan: var(--cyan);
+  --color-purple: var(--purple);
+  --color-glow: var(--glow);
+  --color-dim: var(--dim);
+  --font-display: var(--display);
+  --font-body: var(--body);
+  --font-mono: var(--mono);
+}
+
+/* ============================================================
+   Motifs de assinatura
+   ============================================================ */
+
+/* Aberração cromática — a marca respirando (wordmark e títulos-chave) */
+.rb-chroma {
+  text-shadow:
+    0.045em 0 var(--magenta),
+    -0.045em 0 var(--cyan);
+}
+
+.rb-chroma-glitch {
+  text-shadow:
+    0.045em 0 var(--magenta),
+    -0.045em 0 var(--cyan);
+  animation: rb-chroma 5s steps(1) infinite;
+}
+
+@keyframes rb-chroma {
+  0%,
+  92%,
+  100% {
+    text-shadow:
+      0.045em 0 var(--magenta),
+      -0.045em 0 var(--cyan);
+  }
+  93% {
+    text-shadow:
+      0.12em 0 var(--magenta),
+      -0.09em 0 var(--cyan);
+    transform: translateX(-2px);
+  }
+  95% {
+    text-shadow:
+      -0.06em 0 var(--magenta),
+      0.09em 0 var(--cyan);
+    transform: translateX(3px);
+  }
+  97% {
+    text-shadow:
+      0.045em 0 var(--magenta),
+      -0.045em 0 var(--cyan);
+    transform: none;
+  }
+}
+
+/* Scanlines + vinheta de CRT (aplicar em superfícies escuras) */
+.rb-scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+}
+
+.rb-vignette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 40%, transparent 55%, #000a 100%);
+}
+
+/* OSD do videocassete — rótulos, timecodes */
+.rb-osd {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+
+.rb-osd .rb-rec {
+  color: var(--magenta);
+}
+
+.rb-rew {
+  font-family: var(--display);
+  color: var(--cyan);
+  letter-spacing: 0.1em;
+}
+
+.rb-tagline {
+  font-family: var(--mono);
+  color: var(--glow);
+  letter-spacing: 0.04em;
+}
+
+/* Barras de tracking (divisores decorativos) */
+.rb-tracking-bar {
+  height: 36px;
+  border-radius: 5px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--magenta) 0 8px,
+    var(--purple) 8px 16px,
+    var(--cyan) 16px 24px
+  );
+}
+
+/* Gradiente cônico do mark ◄◄ */
+.rb-mark-gradient {
+  background: conic-gradient(from 210deg, var(--magenta), var(--purple), var(--cyan), var(--magenta));
+}
+
+/* Acessibilidade */
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-chroma-glitch {
+    animation: none !important;
+    text-shadow:
+      0.045em 0 var(--magenta),
+      -0.045em 0 var(--cyan) !important;
+    transform: none !important;
+  }
+}
