@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { GiftPreview } from '../../components/gift-preview';
 import { createGift, updateGift, getGift } from '../../lib/api';
@@ -344,7 +345,7 @@ function TimelineEditor({
   );
 }
 
-/** Link/QR bloqueados até o pagamento (F1-4). O checkout entra no F1-5. */
+/** Link/QR bloqueados até o pagamento (F1-4); o CTA leva ao checkout (F1-5). */
 function LockedLink() {
   return (
     <div className="mt-6 rounded-xl border border-[var(--line)] bg-panel/50 p-5 text-center">
@@ -352,13 +353,12 @@ function LockedLink() {
         🔒 seu link secreto
       </p>
       <code className="mt-2 block font-mono text-lg text-dim/70">rebobinai.app/p/•••••</code>
-      <button
-        type="button"
-        disabled
-        className="mt-4 w-full cursor-not-allowed rounded-lg bg-magenta/40 px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape"
+      <Link
+        href="/pagar"
+        className="mt-4 block w-full rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
       >
-        pagar e liberar · em breve
-      </button>
+        pagar e liberar ►
+      </Link>
       <p className="mt-3 text-xs text-dim">
         O link compartilhável e o QR são liberados após o pagamento, sem a marca d&apos;água.
       </p>

@@ -1,0 +1,30 @@
+import { Body, Controller, Get, Ip, Param, Post } from '@nestjs/common';
+import { ZodValidationPipe } from '../../infra/zod-validation.pipe';
+import {
+  CardCheckoutDto,
+  PixCheckoutDto,
+  cardCheckoutSchema,
+  pixCheckoutSchema,
+} from './dto/checkout.schemas';
+import { PaymentsService } from './payments.service';
+
+/** Checkout transparente (F1-5): Pix (QR inline) e cartão. */
+@Controller('checkout')
+export class CheckoutController {
+  constructor(private readonly payments: PaymentsService) {}
+
+  @Post('pix')
+  pix(@Body(new ZodValidationPipe(pixCheckoutSchema)) dto: PixCheckoutDto) {
+    return this.payments.checkoutPix(dto);
+  }
+
+  @Post('card')
+  card(@Body(new ZodValidationPipe(cardCheckoutSchema)) dto: CardCheckoutDto, @Ip() ip: string) {
+    return this.payments.checkoutCard(dto, ip);
+  }
+
+  @Get('orders/:id')
+  orderStatus(@Param('id') id: string) {
+    return this.payments.getOrderStatus(id);
+  }
+}

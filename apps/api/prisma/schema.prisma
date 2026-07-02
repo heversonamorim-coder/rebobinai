@@ -108,3 +108,37 @@ model Plan {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: payments (dono da tabela Order)
+// Guarda só o giftId (não cruza tabelas do gift). O gateway (Asaas) é a fonte
+// de verdade do pagamento; refs ficam em gatewayId. A liberação do presente
+// acontece no webhook (F1-6), chamando o serviço exportado do módulo gift.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  canceled
+  refunded
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  giftId        String
+  planKey       PlanKey
+  amountCharged Int // centavos efetivamente cobrados
+  gateway       String      @default("asaas")
+  gatewayId     String? // id da cobrança no gateway (Asaas payment id)
+  status        OrderStatus @default(pending)
+  billingType   String? // PIX | CREDIT_CARD
+  customerEmail String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  paidAt        DateTime?
+
+  @@index([giftId])
+  @@index([gatewayId])
+  @@index([status, createdAt])
+}
