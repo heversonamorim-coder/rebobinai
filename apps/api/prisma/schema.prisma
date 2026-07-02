@@ -28,3 +28,52 @@ model OutboxEvent {
   @@index([processedAt, createdAt])
   @@index([aggregateType, aggregateId])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: gift (dono das tabelas Gift e GiftAsset)
+// Ciclo de vida: draft (guest, com marca d'água) → paid (slug público, sem marca)
+//   → archived. O slug público só é gerado ao pagar (anti-abuso). Guest-first:
+//   o rascunho é acessado por editToken, sem login.
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum GiftStatus {
+  draft
+  paid
+  archived
+}
+
+enum GiftAssetType {
+  image
+  audio
+}
+
+model Gift {
+  id             String     @id @default(cuid())
+  slug           String?    @unique // curto e permanente; só é gerado ao pagar
+  status         GiftStatus @default(draft)
+  ownerAccountId String? // vínculo opcional de conta (Fase 2); guest-first
+  editToken      String     @unique @default(cuid()) // acesso do guest ao rascunho
+  occasion       String? // ex.: "dia-dos-pais", "namorada"
+  payload        Json       @default("{}") // conteúdo (título, carta, timeline...)
+  watermark      Boolean    @default(true) // removida ao pagar
+  paidAt         DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  assets GiftAsset[]
+
+  @@index([status, createdAt])
+  @@index([ownerAccountId])
+}
+
+model GiftAsset {
+  id        String        @id @default(cuid())
+  giftId    String
+  gift      Gift          @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  type      GiftAssetType
+  r2Key     String // chave no Cloudflare R2 (upload em F3-3)
+  order     Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([giftId, order])
+}
