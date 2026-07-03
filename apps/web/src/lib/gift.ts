@@ -41,6 +41,17 @@ export interface Gift {
   paidAt: string | null;
 }
 
+/** Exemplo pronto por persona (galeria) — base pra clonar (F2-5). */
+export interface Example {
+  id: string;
+  persona: string;
+  name: string;
+  occasion: string | null;
+  payload: GiftPayload;
+  seoSlug: string;
+  sortOrder: number;
+}
+
 /** Projeção pública do presente (sem editToken) — usada no SSR de /p/:slug. */
 export interface PublicGift {
   id: string;

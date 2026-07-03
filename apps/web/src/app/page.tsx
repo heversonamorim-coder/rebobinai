@@ -83,6 +83,20 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Exemplos / inspiração */}
+      <section className="mx-auto max-w-2xl px-5 pb-4 text-center">
+        <SectionTitle kicker="inspiração" title="Sem ideia? Comece de um exemplo" />
+        <p className="mx-auto mt-3 max-w-xl text-sm text-dim">
+          Rebobinadas prontas por ocasião — clique em “usar como base” e ajuste do seu jeito.
+        </p>
+        <Link
+          href="/exemplos"
+          className="mt-8 inline-block rounded-lg border border-cyan px-8 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-cyan transition hover:bg-cyan hover:text-tape"
+        >
+          ver exemplos ►
+        </Link>
+      </section>
+
       {/* Planos */}
       <section className="mx-auto max-w-5xl px-5 py-20">
         <SectionTitle kicker="planos" title="Escolha como vai emocionar" />
