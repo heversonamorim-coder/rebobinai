@@ -14,7 +14,7 @@ import {
   type TimelineItem,
 } from '../../lib/gift';
 
-const STEPS = ['Ocasião', 'História', 'Linha do tempo', 'Trilha', 'Prévia'] as const;
+const STEPS = ['Ocasião', 'História', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
 
 const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
@@ -89,7 +89,7 @@ export default function CriarPage() {
   }
 
   return (
-    <main className="mx-auto min-h-svh w-full max-w-2xl px-5 py-10 sm:py-16">
+    <main className="mx-auto min-h-svh w-full max-w-5xl px-5 py-10 sm:py-16">
       <header className="mb-8">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-dim">
           <span className="rb-rew">◄◄</span> Rebobinaí · criar presente
@@ -97,11 +97,14 @@ export default function CriarPage() {
         <ProgressBar step={step} />
       </header>
 
-      {error && (
-        <p className="mb-6 rounded-lg border border-magenta/50 bg-magenta/10 px-4 py-3 text-sm text-glow">
-          {error}
-        </p>
-      )}
+      <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,400px)]">
+        {/* Coluna do formulário */}
+        <div>
+          {error && (
+            <p className="mb-6 rounded-lg border border-magenta/50 bg-magenta/10 px-4 py-3 text-sm text-glow">
+              {error}
+            </p>
+          )}
 
       {step === 0 && (
         <Step title="Pra quem é o presente?" hint="Isso personaliza a rebobinada.">
@@ -179,40 +182,50 @@ export default function CriarPage() {
       )}
 
       {step === 4 && (
-        <Step title="Prévia" hint="É assim que vai ficar. O link libera após o pagamento.">
-          <GiftPreview payload={payload} occasion={occasion} watermark />
+        <Step title="Seu presente está pronto ◄◄" hint="Confira a prévia ao lado. O link e o QR liberam após o pagamento.">
           <LockedLink />
         </Step>
       )}
 
-      <nav className="mt-8 flex items-center justify-between gap-4">
-        <button
-          type="button"
-          onClick={back}
-          disabled={step === 0 || saving}
-          className="font-mono text-xs uppercase tracking-[0.2em] text-dim disabled:opacity-30"
-        >
-          ◄ voltar
-        </button>
-
-        <div className="flex items-center gap-4">
-          {step < STEPS.length - 1 && ref && (
-            <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
-              rascunho salvo
-            </span>
-          )}
-          {step < STEPS.length - 1 && (
+          <nav className="mt-8 flex items-center justify-between gap-4">
             <button
               type="button"
-              onClick={next}
-              disabled={saving}
-              className="rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110 disabled:opacity-50"
+              onClick={back}
+              disabled={step === 0 || saving}
+              className="font-mono text-xs uppercase tracking-[0.2em] text-dim disabled:opacity-30"
             >
-              {saving ? 'salvando…' : step === STEPS.length - 2 ? 'ver prévia ►' : 'continuar ►'}
+              ◄ voltar
             </button>
-          )}
+
+            <div className="flex items-center gap-4">
+              {step < STEPS.length - 1 && ref && (
+                <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
+                  rascunho salvo
+                </span>
+              )}
+              {step < STEPS.length - 1 && (
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={saving}
+                  className="rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110 disabled:opacity-50"
+                >
+                  {saving ? 'salvando…' : step === STEPS.length - 2 ? 'finalizar ►' : 'continuar ►'}
+                </button>
+              )}
+            </div>
+          </nav>
         </div>
-      </nav>
+
+        {/* Coluna da prévia ao vivo */}
+        <aside className="lg:sticky lg:top-8 lg:self-start">
+          <p className="mb-3 flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-magenta" />
+            prévia ao vivo
+          </p>
+          <GiftPreview payload={payload} occasion={occasion} watermark />
+        </aside>
+      </div>
     </main>
   );
 }
