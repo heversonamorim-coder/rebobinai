@@ -142,3 +142,24 @@ model Order {
   @@index([gatewayId])
   @@index([status, createdAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: gallery (dono da tabela Example)
+// Exemplos prontos por persona. "Usar como base" clona o payload num rascunho
+// novo (via GiftService) — mata a folha em branco e acelera a criação (F2-5).
+// O seoSlug alimenta as páginas de ocasião (F2-6).
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Example {
+  id        String   @id @default(cuid())
+  persona   String // ex.: "namorada", "pai"
+  name      String // rótulo exibido, ex.: "Pra namorada"
+  occasion  String?
+  payload   Json
+  seoSlug   String   @unique
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([active, sortOrder])
+}

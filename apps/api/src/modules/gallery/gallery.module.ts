@@ -1,14 +1,18 @@
 import { Module } from '@nestjs/common';
+import { GiftModule } from '../gift/gift.module';
+import { ExampleRepository } from './example.repository';
+import { ExampleService } from './example.service';
+import { ExamplesController } from './examples.controller';
 
 /**
- * Bounded context: gallery
- * Regra do monólito modular: este módulo NÃO acessa tabelas de outros módulos.
- * Comunicação apenas por serviços internos exportados e eventos de domínio (outbox).
+ * Bounded context: gallery (dono da tabela Example).
+ * Usa GiftService (serviço exportado) para clonar exemplos em rascunhos; não
+ * toca tabelas de outros módulos.
  */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  imports: [GiftModule],
+  controllers: [ExamplesController],
+  providers: [ExampleService, ExampleRepository],
+  exports: [ExampleService],
 })
 export class GalleryModule {}

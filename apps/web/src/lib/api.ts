@@ -1,4 +1,4 @@
-import type { Gift, GiftPayload, PublicGift } from './gift';
+import type { Example, Gift, GiftPayload, PublicGift } from './gift';
 import type { Plan } from './plans';
 
 /**
@@ -111,6 +111,20 @@ export function checkoutCard(input: {
 
 export function getOrderStatus(orderId: string): Promise<OrderStatus> {
   return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
+}
+
+/** Galeria de exemplos por persona (F2-5). */
+export async function getExamples(): Promise<Example[]> {
+  try {
+    return await request<Example[]>('/examples', { cache: 'no-store' });
+  } catch {
+    return [];
+  }
+}
+
+/** Clona um exemplo num rascunho novo e devolve o presente (com editToken). */
+export function cloneExample(id: string): Promise<Gift> {
+  return request<Gift>(`/examples/${id}/clone`, { method: 'POST' });
 }
 
 /** Catálogo de planos (landing/checkout). Revalida de hora em hora (ISR). */

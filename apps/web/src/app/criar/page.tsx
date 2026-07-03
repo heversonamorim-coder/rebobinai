@@ -138,6 +138,12 @@ export default function CriarPage() {
             onChange={(v) => patch({ senderName: v })}
             placeholder="Ex.: João"
           />
+          <Link
+            href="/exemplos"
+            className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-cyan underline underline-offset-4"
+          >
+            ◄◄ ou comece de um exemplo pronto
+          </Link>
         </Step>
       )}
 
