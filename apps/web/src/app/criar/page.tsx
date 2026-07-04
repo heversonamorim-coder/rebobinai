@@ -63,11 +63,21 @@ const STEPS = [
   'Fotos',
   'Linha do tempo',
   'Trilha',
+  'Recado final',
   'Finalizar',
 ] as const;
 
 // A prévia (stories) acompanha o passo atual: cada passo foca o slide da seção.
-const STEP_FOCUS = ['cover', 'cover', 'wrapped', 'photos', 'timeline', 'music', 'cover'] as const;
+const STEP_FOCUS = [
+  'cover',
+  'cover',
+  'wrapped',
+  'photos',
+  'timeline',
+  'music',
+  'closing',
+  'cover',
+] as const;
 
 // Limite de upload — precisa bater com o FileInterceptor da API (10MB).
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -349,6 +359,29 @@ export default function CriarPage() {
       )}
 
       {step === 6 && (
+        <Step
+          title="Um recado final"
+          hint="A última mensagem que aparece pra quem recebe — o fecho da rebobinada."
+        >
+          <div className="mb-2">
+            <label className={labelClass} htmlFor="closing">
+              Recado de fechamento (opcional)
+            </label>
+            <textarea
+              id="closing"
+              className={`${inputClass} min-h-40 resize-y`}
+              value={payload.closingMessage ?? ''}
+              onChange={(e) => patch({ closingMessage: e.target.value })}
+              placeholder="Ex.: Que venham muitos outros capítulos. Eu te amo ◄◄"
+            />
+          </div>
+          <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+            aparece como último slide, logo antes de a pessoa compartilhar
+          </p>
+        </Step>
+      )}
+
+      {step === 7 && (
         <Step title="Seu presente está pronto ◄◄" hint="Confira a prévia ao lado. O link e o QR liberam após o pagamento.">
           <LockedLink />
         </Step>

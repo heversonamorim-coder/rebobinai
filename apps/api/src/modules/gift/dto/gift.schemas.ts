@@ -41,6 +41,8 @@ export const giftPayloadSchema = z
     timeline: z.array(timelineItemSchema).max(50).optional(),
     counter: counterSchema.optional(),
     stats: z.array(statSchema).max(30).optional(),
+    // Recado de fechamento ao destinatário (Tarefa 3).
+    closingMessage: z.string().max(2000).optional(),
     theme: z.string().max(60).optional(),
     spotifyTrackUrl: z.string().url().max(500).optional(),
   })

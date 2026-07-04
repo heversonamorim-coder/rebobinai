@@ -49,6 +49,8 @@ export default async function GiftPublicPage({ params }: Params) {
   if (!gift) notFound();
 
   // Quem recebe o link vê só a rebobinada, em tela cheia — sem links nem QR.
+  // O shareUrl habilita o último slide de compartilhar como story (Tarefa 4).
+  const url = `${await siteBaseUrl()}/p/${slug}`;
   return (
     <main className="flex min-h-svh w-full items-stretch justify-center bg-tape sm:items-center sm:py-6">
       <StoriesViewer
@@ -57,6 +59,7 @@ export default async function GiftPublicPage({ params }: Params) {
         assets={gift.assets}
         watermark={gift.watermark}
         fullscreen
+        shareUrl={url}
       />
     </main>
   );
