@@ -8,12 +8,28 @@ export interface TimelineItem {
   photoAssetId?: string;
 }
 
+/** Contador de dias — data (nunca assume casal) + label editável. */
+export interface GiftCounter {
+  targetDate?: string;
+  label?: string;
+}
+
+/** Card do "Os números de vocês". Auto = derivado da data (value no render). */
+export interface GiftStat {
+  auto?: 'days_since_counter';
+  value?: number;
+  suffix?: string;
+  label: string;
+}
+
 export interface GiftPayload {
   title?: string;
   recipientName?: string;
   senderName?: string;
   letter?: string;
   timeline?: TimelineItem[];
+  counter?: GiftCounter;
+  stats?: GiftStat[];
   theme?: string;
   spotifyTrackUrl?: string;
   [k: string]: unknown;
@@ -100,6 +116,75 @@ export function occasionLabel(value: string | null | undefined): string | null {
   if (found) return found.label;
   // Valores legados (namorada, pai, amigas…): mostra capitalizado.
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+// ── "Os números de vocês" ─────────────────────────────────────────────────────
+
+/**
+ * Label default do contador, derivado da Ocasião (nunca assume casal na
+ * pergunta, só no rótulo sugerido). Sempre editável pelo usuário.
+ */
+export function defaultCounterLabel(occasion: string | null | undefined): string {
+  switch (occasion) {
+    case 'namorados':
+    case 'conjuge':
+    case 'casamento':
+      return 'juntos há';
+    case 'pais':
+    case 'avos':
+      return 'de vida juntos';
+    case 'aniversario':
+      return 'de você no mundo';
+    case 'amizade': // não está no dropdown atual, mas fica pronto
+      return 'de amizade';
+    default:
+      return 'dessa história';
+  }
+}
+
+/** Chips de sugestão de stats, variando por Ocasião. */
+export function statChipsFor(occasion: string | null | undefined): GiftStat[] {
+  switch (occasion) {
+    case 'namorados':
+    case 'conjuge':
+    case 'casamento':
+      return [
+        { value: 5, suffix: 'viagens', label: 'e contando' },
+        { value: 300, suffix: 'fotos juntos', label: 'e subindo' },
+        { value: 100, suffix: 'cafés divididos', label: 'e mais um' },
+      ];
+    case 'pais':
+      return [
+        { value: 20, suffix: 'churrascos', label: 'e contando' },
+        { value: 50, suffix: 'conselhos', label: 'que colaram' },
+        { value: 200, suffix: 'caronas', label: 'sem reclamar' },
+      ];
+    case 'amizade':
+      return [
+        { value: 500, suffix: 'áudios de 5 min', label: 'ouvidos' },
+        { value: 30, suffix: 'perrengues', label: 'superados' },
+        { suffix: '∞', label: 'risadas' },
+      ];
+    default:
+      return [
+        { value: 300, suffix: 'fotos juntos', label: 'e subindo' },
+        { suffix: '∞', label: 'risadas' },
+      ];
+  }
+}
+
+/** Texto do chip (o "∞" vem no fim, ex.: "risadas ∞"). */
+export function statChipText(chip: GiftStat): string {
+  return chip.value == null && chip.suffix ? `${chip.label} ${chip.suffix}` : (chip.suffix ?? chip.label);
+}
+
+/** Dias inteiros decorridos desde a data (>= 0). null se a data for inválida. */
+export function daysSince(targetDate: string | undefined | null): number | null {
+  if (!targetDate) return null;
+  const start = new Date(targetDate).getTime();
+  if (Number.isNaN(start)) return null;
+  const diff = Date.now() - start;
+  return Math.max(0, Math.floor(diff / 86_400_000));
 }
 
 // ── Referência do rascunho no navegador (guest-first, sem login) ──────────────

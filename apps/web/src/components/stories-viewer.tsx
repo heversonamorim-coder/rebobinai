@@ -1,11 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { assetUrl, type GiftAsset, type GiftPayload } from '../lib/gift';
+import {
+  assetUrl,
+  defaultCounterLabel,
+  type GiftAsset,
+  type GiftCounter,
+  type GiftPayload,
+} from '../lib/gift';
 import { spotifyEmbedUrl } from '../lib/spotify';
+import { CountdownTimecode } from './countdown-timecode';
 import { Lightbox } from './lightbox';
+import { WrappedStats } from './wrapped-stats';
 
-type SlideKind = 'cover' | 'photos' | 'timeline' | 'music';
+type SlideKind = 'cover' | 'photos' | 'timeline' | 'wrapped' | 'music';
 
 export interface StoriesViewerProps {
   payload: GiftPayload;
@@ -28,6 +36,7 @@ type Slide = { key: string; kind: SlideKind };
  */
 export function StoriesViewer({
   payload,
+  occasion,
   assets,
   watermark = false,
   focus,
@@ -38,14 +47,23 @@ export function StoriesViewer({
   );
   const embed = spotifyEmbedUrl(payload.spotifyTrackUrl);
 
+  const stats = payload.stats ?? [];
+  const counterLabel = payload.counter?.label || defaultCounterLabel(occasion);
+  // Wrapped existe se há stat manual OU (data preenchida + card automático).
+  const hasWrapped =
+    stats.some((s) => !s.auto) ||
+    (Boolean(payload.counter?.targetDate) && stats.some((s) => s.auto));
+
   const slides = useMemo<Slide[]>(() => {
     // A história (título + recado) fica na própria capa — não vira slide à parte.
     const s: Slide[] = [{ key: 'cover', kind: 'cover' }];
     if (photos.length > 0) s.push({ key: 'photos', kind: 'photos' });
     if ((payload.timeline ?? []).length > 0) s.push({ key: 'timeline', kind: 'timeline' });
+    // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
+    if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
     return s;
-  }, [payload.timeline, photos.length, embed]);
+  }, [payload.timeline, photos.length, hasWrapped, embed]);
 
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -123,13 +141,21 @@ export function StoriesViewer({
       {/* Conteúdo do slide (rola na vertical) */}
       <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-6 pb-10 pt-20 sm:px-8">
         {slide?.kind === 'cover' && (
-          <CoverSlide payload={payload} hasNext={slides.length > 1} onPlay={() => go(1)} />
+          <CoverSlide
+            payload={payload}
+            counterLabel={counterLabel}
+            hasNext={slides.length > 1}
+            onPlay={() => go(1)}
+          />
         )}
         {slide?.kind === 'photos' && (
           <PhotosSlide photos={photos} onOpen={(i) => setLightbox(i)} />
         )}
         {slide?.kind === 'timeline' && (
           <TimelineSlide items={payload.timeline ?? []} assets={assets ?? []} />
+        )}
+        {slide?.kind === 'wrapped' && (
+          <WrappedStats stats={stats} targetDate={payload.counter?.targetDate} />
         )}
         {slide?.kind === 'music' && embed && <MusicSlide embedUrl={embed} />}
       </div>
@@ -189,14 +215,18 @@ export function StoriesViewer({
 
 function CoverSlide({
   payload,
+  counterLabel,
   hasNext,
   onPlay,
 }: {
   payload: GiftPayload;
+  counterLabel: string;
   hasNext: boolean;
   onPlay: () => void;
 }) {
-  const { title, recipientName, senderName, letter } = payload;
+  const { title, recipientName, senderName, letter, counter } = payload as GiftPayload & {
+    counter?: GiftCounter;
+  };
   return (
     <div className="flex min-h-full flex-col items-center justify-center text-center">
       <h1 className="rb-chroma font-display text-3xl font-bold leading-tight text-glow sm:text-4xl">
@@ -208,6 +238,11 @@ function CoverSlide({
           {recipientName && senderName ? ' · ' : ''}
           {senderName ? `de ${senderName}` : ''}
         </p>
+      )}
+      {counter?.targetDate && (
+        <div className="mt-6">
+          <CountdownTimecode targetDate={counter.targetDate} label={counterLabel} />
+        </div>
       )}
       {letter?.trim() && (
         <p className="mt-6 max-w-prose whitespace-pre-wrap text-base leading-relaxed text-glow/90">
