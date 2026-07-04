@@ -39,6 +39,16 @@ const TrashIcon = () => (
   </svg>
 );
 
+// Ícone de troca (setas trocando) — usado no "trocar foto" do momento.
+const SwapIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+    <path d="M16 3l4 4-4 4" />
+    <path d="M20 7H8a4 4 0 0 0-4 4" />
+    <path d="M8 21l-4-4 4-4" />
+    <path d="M4 17h12a4 4 0 0 0 4-4" />
+  </svg>
+);
+
 const STEPS = ['Ocasião', 'História', 'Fotos', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
 
 // A prévia (stories) acompanha o passo atual: cada passo foca o slide da seção.
@@ -516,26 +526,29 @@ function MomentPhoto({
   if (selected) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
+        {/* Controles flutuam sobre a foto pra economizar espaço */}
+        <div className="relative inline-block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={assetUrl(selected)}
             alt=""
-            className="h-16 w-16 rounded-lg border border-[var(--line)] object-cover"
+            className="h-24 w-24 rounded-lg border border-[var(--line)] object-cover"
           />
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan hover:underline"
+            aria-label="Trocar foto"
+            className="absolute left-1 top-1 rounded bg-tape/80 p-1.5 text-glow hover:text-cyan"
           >
-            trocar foto
+            <SwapIcon />
           </button>
           <button
             type="button"
             onClick={() => onSelect(undefined)}
-            className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
+            aria-label="Remover foto"
+            className="absolute right-1 top-1 rounded bg-tape/80 p-1.5 text-glow hover:text-magenta"
           >
-            <TrashIcon /> remover
+            <TrashIcon />
           </button>
         </div>
         {open && (

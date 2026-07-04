@@ -142,6 +142,33 @@
   background: conic-gradient(from 210deg, var(--magenta), var(--purple), var(--cyan), var(--magenta));
 }
 
+/* Tilt de VHS — o logo "balança" de leve como fita rebobinando/tracking */
+.rb-vhs-tilt {
+  animation: rb-vhs-tilt 6s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+@keyframes rb-vhs-tilt {
+  0%,
+  100% {
+    transform: rotate(-1.2deg) skewX(-1deg);
+  }
+  20% {
+    transform: rotate(1deg) skewX(1.2deg) translateY(-1px);
+  }
+  45% {
+    transform: rotate(-0.6deg) skewX(-0.6deg);
+  }
+  55% {
+    /* micro-salto de tracking */
+    transform: rotate(0.4deg) skewX(2deg) translateY(1px);
+  }
+  70% {
+    transform: rotate(1.2deg) skewX(0.4deg);
+  }
+}
+
 /* Acessibilidade */
 :focus-visible {
   outline: 2px solid var(--cyan);
@@ -155,6 +182,10 @@
     text-shadow:
       0.045em 0 var(--magenta),
       -0.045em 0 var(--cyan) !important;
+    transform: none !important;
+  }
+  .rb-vhs-tilt {
+    animation: none !important;
     transform: none !important;
   }
 }

@@ -1,16 +1,30 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import QRCode from 'qrcode';
 import { CopyLink } from '../../../components/copy-link';
 import { StoriesViewer } from '../../../components/stories-viewer';
 import { getPublicGift } from '../../../lib/api';
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rebobinai.app';
-
 // Contador ao vivo: sem cache estático, renderiza a cada abertura.
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ slug: string }> };
+
+/**
+ * URL base do site a partir da requisição — assim o link/QR sempre batem com o
+ * domínio em que a página foi aberta (Vercel, preview ou domínio próprio), sem
+ * depender de um valor fixo. Cai em NEXT_PUBLIC_SITE_URL se o host não vier.
+ */
+async function siteBaseUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host');
+  if (host) {
+    const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+    return `${proto}://${host}`;
+  }
+  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rebobinai.app';
+}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
@@ -20,7 +34,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const title = gift.payload.title || 'Uma rebobinada pra você';
   const description =
     gift.payload.letter?.slice(0, 150) || 'Alguém rebobinou a história de vocês. Aperta o play ◄◄';
-  const url = `${SITE}/p/${slug}`;
+  const url = `${await siteBaseUrl()}/p/${slug}`;
 
   return {
     title: `${title} · Rebobinaí ◄◄`,
@@ -36,7 +50,7 @@ export default async function GiftPublicPage({ params }: Params) {
   const gift = await getPublicGift(slug);
   if (!gift) notFound();
 
-  const url = `${SITE}/p/${slug}`;
+  const url = `${await siteBaseUrl()}/p/${slug}`;
   const whatsapp = `https://wa.me/?text=${encodeURIComponent(`${gift.payload.title ?? 'Um presente pra você'} ◄◄ ${url}`)}`;
   const qr = await QRCode.toDataURL(url, {
     margin: 1,

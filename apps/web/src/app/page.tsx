@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Logo, Osd } from '@rebobinai/ui';
+import { Logo, Mark, Osd } from '@rebobinai/ui';
 import { PricingGrid } from '../components/pricing';
+import { SiteHeader } from '../components/site-header';
 import { getPlans } from '../lib/api';
 import { PLANS_FALLBACK } from '../lib/plans';
 
@@ -50,10 +51,15 @@ export default async function Home() {
 
   return (
     <main className="overflow-hidden">
+      <SiteHeader />
+
       {/* Hero */}
       <section className="rb-scanlines relative flex min-h-svh flex-col items-center justify-center px-5 text-center">
         <Osd left="● REC" right="SP · 0:00:31" />
-        <Logo size="hero" />
+        <div className="rb-vhs-tilt flex flex-col items-center gap-6">
+          <Mark size={104} />
+          <Logo size="hero" />
+        </div>
         <p className="rb-tagline mt-8">
           <span className="rb-rew">◄◄</span> rebobina a nossa história{' '}
           <b className="font-normal text-[var(--magenta)]">· com IA</b>
@@ -67,10 +73,20 @@ export default async function Home() {
         <p className="mt-8 font-mono text-xs uppercase tracking-[0.3em] text-dim">
           grátis pra criar e ver a prévia
         </p>
+
+        {/* Indicador de que tem mais conteúdo pra baixo */}
+        <a
+          href="#como-funciona"
+          aria-label="Rolar para baixo"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.3em] text-dim transition hover:text-cyan"
+        >
+          role pra ver mais
+          <span className="animate-bounce text-lg leading-none">▼</span>
+        </a>
       </section>
 
       {/* Como funciona */}
-      <section className="mx-auto max-w-4xl px-5 py-20">
+      <section id="como-funciona" className="mx-auto max-w-4xl px-5 py-20">
         <SectionTitle kicker="como funciona" title="3 passos e tá no ar" />
         <div className="mt-12 grid gap-8 sm:grid-cols-3">
           {STEPS.map((s) => (
@@ -84,7 +100,7 @@ export default async function Home() {
       </section>
 
       {/* Exemplos / inspiração */}
-      <section className="mx-auto max-w-2xl px-5 pb-4 text-center">
+      <section id="inspiracao" className="mx-auto max-w-2xl px-5 pb-4 text-center">
         <SectionTitle kicker="inspiração" title="Sem ideia? Comece de um exemplo" />
         <p className="mx-auto mt-3 max-w-xl text-sm text-dim">
           Rebobinadas prontas por ocasião — clique em “usar como base” e ajuste do seu jeito.
@@ -98,7 +114,7 @@ export default async function Home() {
       </section>
 
       {/* Planos */}
-      <section className="mx-auto max-w-5xl px-5 py-20">
+      <section id="planos" className="mx-auto max-w-5xl px-5 py-20">
         <SectionTitle kicker="planos" title="Escolha como vai emocionar" />
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-dim">
           Criar e ver a prévia é grátis. Você só paga pra liberar o link e compartilhar.
@@ -109,7 +125,7 @@ export default async function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-2xl px-5 py-20">
+      <section id="faq" className="mx-auto max-w-2xl px-5 py-20">
         <SectionTitle kicker="dúvidas" title="Perguntas frequentes" />
         <div className="mt-10 space-y-6">
           {FAQ.map((item) => (

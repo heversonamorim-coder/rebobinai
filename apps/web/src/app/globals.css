@@ -1,6 +1,17 @@
 @import 'tailwindcss';
 @import '@rebobinai/ui/tokens.css';
 
+/* Escaneia os componentes do pacote de UI (Logo, Mark, Osd) para o Tailwind
+   gerar as classes usadas lá — inclui valores arbitrários como o tamanho do
+   logo no hero. Sem isso, classes só do pacote não entram no CSS final. */
+@source '../../../../packages/ui/src/**/*.{ts,tsx}';
+
+html {
+  scroll-behavior: smooth;
+  /* âncoras não ficam escondidas sob o menu fixo do topo */
+  scroll-padding-top: 5rem;
+}
+
 body {
   background: var(--tape);
   color: var(--glow);

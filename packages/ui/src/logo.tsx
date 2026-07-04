@@ -1,5 +1,5 @@
 const sizes = {
-  hero: 'text-[clamp(3rem,15vw,7.5rem)]',
+  hero: 'text-[clamp(3.5rem,17vw,9rem)]',
   md: 'text-[clamp(1.6rem,7vw,2.4rem)]',
   sm: 'text-xl',
 } as const;

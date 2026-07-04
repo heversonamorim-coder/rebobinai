@@ -32,7 +32,7 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
 
       <div className="mt-5">
         {price.strikethrough && (
-          <span className="mr-2 font-mono text-sm text-dim/60 line-through">
+          <span className="block font-mono text-xs text-dim/60 line-through">
             {price.strikethrough}
           </span>
         )}
