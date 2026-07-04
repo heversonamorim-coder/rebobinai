@@ -13,6 +13,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { MediaModule } from './modules/media/media.module';
 import { GalleryModule } from './modules/gallery/gallery.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     MediaModule,
     GalleryModule,
     NotificationsModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })
