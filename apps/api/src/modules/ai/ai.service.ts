@@ -8,19 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { aiDraftSchema } from './dto/ai.schemas';
 
-const OCCASIONS = [
-  'namorada',
-  'namorado',
-  'esposa',
-  'marido',
-  'mae',
-  'pai',
-  'casamento',
-  'amigas',
-  'avo',
-  'aniversario',
-  'outra',
-];
+const OCCASIONS = ['namorados', 'conjuge', 'pais', 'avos', 'casamento', 'aniversario'];
 
 const SYSTEM = `Você é o compositor do Rebobinaí, um app de presentes digitais que "rebobinam" a história de duas pessoas com estética VHS/retrô.
 

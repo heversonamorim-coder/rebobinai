@@ -167,7 +167,10 @@ export default function CriarPage() {
     <main className="mx-auto min-h-svh w-full max-w-5xl px-5 py-10 sm:py-16">
       <header className="mb-8">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-dim">
-          <span className="rb-rew">◄◄</span> Rebobinaí · criar presente
+          <Link href="/" className="transition hover:text-cyan">
+            <span className="rb-rew">◄◄</span> Rebobinaí
+          </Link>{' '}
+          · criar presente
         </p>
         <ProgressBar step={step} />
       </header>

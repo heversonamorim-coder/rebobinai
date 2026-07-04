@@ -86,22 +86,20 @@ export interface PublicGift {
 
 /** Ocasiões oferecidas no editor (também viram iscas de SEO na galeria, F2-6). */
 export const OCCASIONS = [
-  { value: 'namorada', label: 'Namorada' },
-  { value: 'namorado', label: 'Namorado' },
-  { value: 'esposa', label: 'Esposa' },
-  { value: 'marido', label: 'Marido' },
-  { value: 'mae', label: 'Mãe' },
-  { value: 'pai', label: 'Pai' },
+  { value: 'namorados', label: 'Namorada / Namorado' },
+  { value: 'conjuge', label: 'Esposa / Marido' },
+  { value: 'pais', label: 'Mãe / Pai' },
+  { value: 'avos', label: 'Avó / Avô' },
   { value: 'casamento', label: 'Casamento' },
-  { value: 'amigas', label: 'Melhores amigas' },
-  { value: 'avo', label: 'Avó / Avô' },
   { value: 'aniversario', label: 'Aniversário' },
-  { value: 'outra', label: 'Outra ocasião' },
 ] as const;
 
 export function occasionLabel(value: string | null | undefined): string | null {
   if (!value) return null;
-  return OCCASIONS.find((o) => o.value === value)?.label ?? value;
+  const found = OCCASIONS.find((o) => o.value === value);
+  if (found) return found.label;
+  // Valores legados (namorada, pai, amigas…): mostra capitalizado.
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 // ── Referência do rascunho no navegador (guest-first, sem login) ──────────────
