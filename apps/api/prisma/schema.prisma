@@ -134,6 +134,16 @@ model Order {
   status        OrderStatus @default(pending)
   billingType   String? // PIX | CREDIT_CARD
   customerEmail String?
+
+  // ── Produto físico (plano "Lembrança física", Tarefa 5) ──────────────────
+  productKey    String? // 'caneca' | 'camiseta' (nulo em planos digitais)
+  photoAssetId  String? // foto escolhida p/ a caneca (id de um GiftAsset)
+  shipping      Json? // endereço de entrega { name, phone, cep, street, number, ... }
+  shippingCost  Int? // frete em centavos (calculado por CEP no checkout)
+  // Fulfillment (Tarefa 6) — preenchidos pelo admin ao despachar.
+  trackingCode  String? // código de rastreio dos Correios
+  shippedAt     DateTime?
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   paidAt        DateTime?

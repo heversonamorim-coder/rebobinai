@@ -1,5 +1,6 @@
 import type { Example, Gift, GiftAsset, GiftPayload, PublicGift } from './gift';
 import type { Plan } from './plans';
+import type { FreightQuote, ProductKey, Shipping } from './products';
 
 /**
  * Cliente da API do presente (módulo gift). O guest cria e edita com o
@@ -83,26 +84,37 @@ export interface OrderStatus {
   status: string;
 }
 
-export function checkoutPix(input: {
-  giftId: string;
-  editToken: string;
-  planKey: PlanKeyPaid;
-  customer: CheckoutCustomer;
-}): Promise<PixCheckoutResult> {
+/** Campos do plano físico ("+Lembrança física"), opcionais nos demais planos. */
+export interface PhysicalCheckout {
+  product?: ProductKey;
+  photoAssetId?: string;
+  shipping?: Shipping;
+}
+
+export function checkoutPix(
+  input: {
+    giftId: string;
+    editToken: string;
+    planKey: PlanKeyPaid;
+    customer: CheckoutCustomer;
+  } & PhysicalCheckout,
+): Promise<PixCheckoutResult> {
   return request<PixCheckoutResult>('/checkout/pix', {
     method: 'POST',
     body: JSON.stringify(input),
   });
 }
 
-export function checkoutCard(input: {
-  giftId: string;
-  editToken: string;
-  planKey: PlanKeyPaid;
-  customer: CheckoutCustomer;
-  card: { holderName: string; number: string; expiryMonth: string; expiryYear: string; ccv: string };
-  holder: { postalCode: string; addressNumber: string; phone: string };
-}): Promise<CardCheckoutResult> {
+export function checkoutCard(
+  input: {
+    giftId: string;
+    editToken: string;
+    planKey: PlanKeyPaid;
+    customer: CheckoutCustomer;
+    card: { holderName: string; number: string; expiryMonth: string; expiryYear: string; ccv: string };
+    holder: { postalCode: string; addressNumber: string; phone: string };
+  } & PhysicalCheckout,
+): Promise<CardCheckoutResult> {
   return request<CardCheckoutResult>('/checkout/card', {
     method: 'POST',
     body: JSON.stringify(input),
@@ -111,6 +123,14 @@ export function checkoutCard(input: {
 
 export function getOrderStatus(orderId: string): Promise<OrderStatus> {
   return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
+}
+
+/** Cotação de frete por CEP + total do produto físico. */
+export function getFreight(cep: string, product: ProductKey): Promise<FreightQuote> {
+  return request<FreightQuote>('/checkout/freight', {
+    method: 'POST',
+    body: JSON.stringify({ cep, product }),
+  });
 }
 
 /**

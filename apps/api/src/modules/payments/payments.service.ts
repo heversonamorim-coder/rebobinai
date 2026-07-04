@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -6,13 +7,28 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { $Enums } from '@prisma/client';
+import { $Enums, Prisma } from '@prisma/client';
 import { GiftService } from '../gift/gift.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlanService } from '../promotions/plan.service';
 import { AsaasClient } from './asaas.client';
+import { FreightService } from './freight.service';
 import { OrderRepository } from './order.repository';
-import { CardCheckoutDto, PixCheckoutDto } from './dto/checkout.schemas';
+import { getProduct } from './products';
+import { CardCheckoutDto, FreightDto, PixCheckoutDto } from './dto/checkout.schemas';
+
+type PlanRow = { key: $Enums.PlanKey; name: string; launchPrice: number };
+
+interface ResolvedOrder {
+  amount: number;
+  description: string;
+  physical: {
+    productKey?: string;
+    photoAssetId?: string | null;
+    shipping?: Prisma.InputJsonValue;
+    shippingCost?: number;
+  };
+}
 
 @Injectable()
 export class PaymentsService {
@@ -25,23 +41,68 @@ export class PaymentsService {
     private readonly gifts: GiftService,
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
+    private readonly freight: FreightService,
   ) {}
+
+  /** Cotação de frete + total do produto físico (não passa pelo gateway). */
+  quoteFreight(dto: FreightDto) {
+    const product = getProduct(dto.product);
+    if (!product) throw new BadRequestException('Produto inválido.');
+    const q = this.freight.quote(dto.cep);
+    return {
+      product: { key: product.key, name: product.name, price: product.price },
+      cep: q.cep,
+      region: q.region,
+      shippingCost: q.cost,
+      total: product.price + q.cost,
+    };
+  }
+
+  /**
+   * Resolve o valor a cobrar e os campos de fulfillment. Planos digitais usam o
+   * preço do plano; o plano físico ('quadro') soma produto + frete calculado no
+   * servidor (nunca confia no preço do cliente).
+   */
+  private resolveOrder(dto: PixCheckoutDto | CardCheckoutDto, plan: PlanRow): ResolvedOrder {
+    if (plan.key !== 'quadro') {
+      return { amount: plan.launchPrice, description: `Rebobinaí · ${plan.name}`, physical: {} };
+    }
+    const product = getProduct(dto.product);
+    if (!product) throw new BadRequestException('Escolha um produto (caneca ou camiseta).');
+    if (product.needsPhoto && !dto.photoAssetId) {
+      throw new BadRequestException('Escolha a foto da caneca.');
+    }
+    if (!dto.shipping) throw new BadRequestException('Informe o endereço de entrega.');
+    const q = this.freight.quote(dto.shipping.cep);
+    return {
+      amount: product.price + q.cost,
+      description: `Rebobinaí · ${product.name}`,
+      physical: {
+        productKey: product.key,
+        photoAssetId: dto.photoAssetId ?? null,
+        shipping: dto.shipping as unknown as Prisma.InputJsonValue,
+        shippingCost: q.cost,
+      },
+    };
+  }
 
   async checkoutPix(dto: PixCheckoutDto) {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
+    const resolved = this.resolveOrder(dto, plan);
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({
       giftId: dto.giftId,
       planKey: plan.key,
-      amountCharged: plan.launchPrice,
+      amountCharged: resolved.amount,
       billingType: 'PIX',
       customerEmail: dto.customer.email,
+      ...resolved.physical,
     });
 
     const payment = await this.asaas.createPixPayment({
       customer: customer.id,
-      value: plan.launchPrice / 100,
-      description: `Rebobinaí · ${plan.name}`,
+      value: resolved.amount / 100,
+      description: resolved.description,
       externalReference: order.id,
     });
     await this.orders.update(order.id, {
@@ -63,19 +124,21 @@ export class PaymentsService {
 
   async checkoutCard(dto: CardCheckoutDto, remoteIp: string) {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
+    const resolved = this.resolveOrder(dto, plan);
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({
       giftId: dto.giftId,
       planKey: plan.key,
-      amountCharged: plan.launchPrice,
+      amountCharged: resolved.amount,
       billingType: 'CREDIT_CARD',
       customerEmail: dto.customer.email,
+      ...resolved.physical,
     });
 
     const payment = await this.asaas.createCardPayment({
       customer: customer.id,
-      value: plan.launchPrice / 100,
-      description: `Rebobinaí · ${plan.name}`,
+      value: resolved.amount / 100,
+      description: resolved.description,
       externalReference: order.id,
       creditCard: dto.card,
       creditCardHolderInfo: {

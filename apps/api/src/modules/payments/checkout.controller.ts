@@ -2,11 +2,14 @@ import { Body, Controller, Get, Ip, Param, Post } from '@nestjs/common';
 import { ZodValidationPipe } from '../../infra/zod-validation.pipe';
 import {
   CardCheckoutDto,
+  FreightDto,
   PixCheckoutDto,
   cardCheckoutSchema,
+  freightSchema,
   pixCheckoutSchema,
 } from './dto/checkout.schemas';
 import { PaymentsService } from './payments.service';
+import { PHYSICAL_PRODUCTS } from './products';
 
 /** Checkout transparente (F1-5): Pix (QR inline) e cartão. */
 @Controller('checkout')
@@ -26,5 +29,17 @@ export class CheckoutController {
   @Get('orders/:id')
   orderStatus(@Param('id') id: string) {
     return this.payments.getOrderStatus(id);
+  }
+
+  /** Catálogo de produtos físicos (plano "Lembrança física"). */
+  @Get('products')
+  products() {
+    return Object.values(PHYSICAL_PRODUCTS);
+  }
+
+  /** Cotação de frete por CEP + total do produto (não passa pelo gateway). */
+  @Post('freight')
+  freight(@Body(new ZodValidationPipe(freightSchema)) dto: FreightDto) {
+    return this.payments.quoteFreight(dto);
   }
 }
