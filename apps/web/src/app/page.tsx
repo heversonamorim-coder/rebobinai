@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Logo, Mark, Osd } from '@rebobinai/ui';
+import { Osd } from '@rebobinai/ui';
+import { HeroCarousel } from '../components/hero-carousel';
 import { PricingGrid } from '../components/pricing';
 import { SiteHeader } from '../components/site-header';
 import { getPlans } from '../lib/api';
@@ -53,26 +54,10 @@ export default async function Home() {
     <main className="overflow-hidden">
       <SiteHeader />
 
-      {/* Hero */}
+      {/* Hero (carrossel) */}
       <section className="rb-scanlines relative flex min-h-svh flex-col items-center justify-center px-5 text-center">
         <Osd left="● REC" right="SP · 0:00:31" />
-        <div className="rb-vhs-tilt flex flex-col items-center gap-6">
-          <Mark size={104} />
-          <Logo size="hero" />
-        </div>
-        <p className="rb-tagline mt-8">
-          <span className="rb-rew">◄◄</span> rebobina a nossa história{' '}
-          <b className="font-normal text-[var(--magenta)]">· com IA</b>
-        </p>
-        <Link
-          href="/criar"
-          className="mt-12 rounded-lg bg-magenta px-8 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
-        >
-          criar meu presente ►
-        </Link>
-        <p className="mt-8 font-mono text-xs uppercase tracking-[0.3em] text-dim">
-          grátis pra criar e ver a prévia
-        </p>
+        <HeroCarousel />
 
         {/* Indicador de que tem mais conteúdo pra baixo */}
         <a

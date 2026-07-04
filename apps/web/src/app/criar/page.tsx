@@ -304,22 +304,24 @@ export default function CriarPage() {
         </Step>
       )}
 
-          <nav className="mt-8 flex items-center justify-between gap-4">
-            <button
-              type="button"
-              onClick={back}
-              disabled={step === 0 || saving}
-              className="font-mono text-xs uppercase tracking-[0.2em] text-dim disabled:opacity-30"
-            >
-              ◄ voltar
-            </button>
+          <div className="mt-8">
+            {/* "rascunho salvo" numa linha própria acima, pra não empurrar os
+                botões e quebrar linha no celular. */}
+            {step < STEPS.length - 1 && ref && (
+              <p className="mb-3 text-right font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
+                rascunho salvo
+              </p>
+            )}
+            <nav className="flex items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={back}
+                disabled={step === 0 || saving}
+                className="font-mono text-xs uppercase tracking-[0.2em] text-dim disabled:opacity-30"
+              >
+                ◄ voltar
+              </button>
 
-            <div className="flex items-center gap-4">
-              {step < STEPS.length - 1 && ref && (
-                <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
-                  rascunho salvo
-                </span>
-              )}
               {step < STEPS.length - 1 && (
                 <button
                   type="button"
@@ -330,8 +332,8 @@ export default function CriarPage() {
                   {saving ? 'salvando…' : step === STEPS.length - 2 ? 'finalizar ►' : 'continuar ►'}
                 </button>
               )}
-            </div>
-          </nav>
+            </nav>
+          </div>
         </div>
 
         {/* Coluna da prévia ao vivo */}
