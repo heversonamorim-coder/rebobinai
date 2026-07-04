@@ -41,6 +41,12 @@ const TrashIcon = () => (
 
 const STEPS = ['Ocasião', 'História', 'Fotos', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
 
+// A prévia (stories) acompanha o passo atual: cada passo foca o slide da seção.
+const STEP_FOCUS = ['cover', 'cover', 'photos', 'timeline', 'music', 'cover'] as const;
+
+// Limite de upload — precisa bater com o FileInterceptor da API (10MB).
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
 const labelClass = 'mb-2 block font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim';
@@ -324,7 +330,13 @@ export default function CriarPage() {
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-magenta" />
             prévia ao vivo
           </p>
-          <StoriesViewer payload={payload} occasion={occasion} assets={assets} watermark />
+          <StoriesViewer
+            payload={payload}
+            occasion={occasion}
+            assets={assets}
+            watermark
+            focus={STEP_FOCUS[step]}
+          />
           <p className="mt-3 text-center font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/70">
             toque nas laterais pra navegar
           </p>
@@ -496,30 +508,39 @@ function MomentPhoto({
     }
   }
 
+  function pick(id: string) {
+    onSelect(id);
+    setOpen(false);
+  }
+
   if (selected) {
     return (
-      <div className="flex items-center gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={assetUrl(selected)}
-          alt=""
-          className="h-16 w-16 rounded-lg border border-[var(--line)] object-cover"
-        />
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan hover:underline"
-        >
-          trocar foto
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelect(undefined)}
-          className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
-        >
-          <TrashIcon /> remover
-        </button>
-        {open && <PhotoPicker photos={photos} onPick={(id) => { onSelect(id); setOpen(false); }} onUploadNew={uploadNew} />}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={assetUrl(selected)}
+            alt=""
+            className="h-16 w-16 rounded-lg border border-[var(--line)] object-cover"
+          />
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan hover:underline"
+          >
+            trocar foto
+          </button>
+          <button
+            type="button"
+            onClick={() => onSelect(undefined)}
+            className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
+          >
+            <TrashIcon /> remover
+          </button>
+        </div>
+        {open && (
+          <PhotoPicker photos={photos} onPick={pick} onUploadNew={uploadNew} onClose={() => setOpen(false)} />
+        )}
       </div>
     );
   }
@@ -536,7 +557,7 @@ function MomentPhoto({
     );
   }
 
-  return <PhotoPicker photos={photos} onPick={onSelect} onUploadNew={uploadNew} onClose={() => setOpen(false)} />;
+  return <PhotoPicker photos={photos} onPick={pick} onUploadNew={uploadNew} onClose={() => setOpen(false)} />;
 }
 
 function PhotoPicker({
@@ -604,11 +625,17 @@ function PhotoUploader({
 }) {
   const [dragging, setDragging] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [tooLarge, setTooLarge] = useState<string[]>([]);
   const photos = assets.filter((a) => a.type === 'image');
   const lightboxPhotos = photos.map((a) => ({ id: a.id, url: assetUrl(a) }));
 
-  function pickImages(list: FileList | null): File[] {
-    return Array.from(list ?? []).filter((f) => f.type.startsWith('image/'));
+  // Separa imagens válidas das grandes demais; as grandes viram mensagem
+  // elegante (sem tentar subir e falhar feio).
+  function handleFiles(list: FileList | null) {
+    const imgs = Array.from(list ?? []).filter((f) => f.type.startsWith('image/'));
+    const valid = imgs.filter((f) => f.size <= MAX_UPLOAD_BYTES);
+    setTooLarge(imgs.filter((f) => f.size > MAX_UPLOAD_BYTES).map((f) => f.name));
+    if (valid.length) void onUpload(valid);
   }
 
   return (
@@ -622,8 +649,7 @@ function PhotoUploader({
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          const files = pickImages(e.dataTransfer.files);
-          if (files.length) void onUpload(files);
+          handleFiles(e.dataTransfer.files);
         }}
         className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center transition ${
           dragging ? 'border-cyan bg-cyan/10' : 'border-[var(--line)] hover:border-cyan'
@@ -639,12 +665,24 @@ function PhotoUploader({
           multiple
           className="hidden"
           onChange={(e) => {
-            const files = pickImages(e.target.files);
-            if (files.length) void onUpload(files);
+            handleFiles(e.target.files);
             e.target.value = '';
           }}
         />
       </label>
+
+      {tooLarge.length > 0 && (
+        <div className="mt-4 space-y-1">
+          {tooLarge.map((name) => (
+            <p
+              key={name}
+              className="rounded-lg border border-magenta/50 bg-magenta/10 px-3 py-2 text-sm text-glow"
+            >
+              A imagem {name} ultrapassa o limite de tamanho permitido
+            </p>
+          ))}
+        </div>
+      )}
 
       {uploads.length > 0 && (
         <div className="mt-4 space-y-2">

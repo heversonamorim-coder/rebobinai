@@ -1,19 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { assetUrl, occasionLabel, type GiftAsset, type GiftPayload } from '../lib/gift';
+import { assetUrl, type GiftAsset, type GiftPayload } from '../lib/gift';
 import { spotifyEmbedUrl } from '../lib/spotify';
 import { Lightbox } from './lightbox';
 
+type SlideKind = 'cover' | 'photos' | 'timeline' | 'music';
+
 export interface StoriesViewerProps {
   payload: GiftPayload;
+  /** Ocasião — guardada, mas não exibida na rebobinada (uso futuro). */
   occasion?: string | null;
   assets?: GiftAsset[];
   /** Marca d'água de prévia (rascunho não pago). */
   watermark?: boolean;
+  /** Prévia acompanha o passo atual do editor: pula pro slide correspondente. */
+  focus?: SlideKind;
 }
 
-type Slide = { key: string; kind: 'cover' | 'letter' | 'photos' | 'timeline' | 'music' };
+type Slide = { key: string; kind: SlideKind };
 
 /**
  * A rebobinada navegável no estilo "stories" do Instagram: cada seção é um
@@ -21,7 +26,12 @@ type Slide = { key: string; kind: 'cover' | 'letter' | 'photos' | 'timeline' | '
  * rola na vertical quando é maior que a tela. O slide de capa tem um ▶ play.
  * Usado na prévia da criação e na página pública /p/:slug.
  */
-export function StoriesViewer({ payload, occasion, assets, watermark = false }: StoriesViewerProps) {
+export function StoriesViewer({
+  payload,
+  assets,
+  watermark = false,
+  focus,
+}: StoriesViewerProps) {
   const photos = useMemo(
     () => (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a)).map((a) => ({ id: a.id, url: assetUrl(a) })),
     [assets],
@@ -29,13 +39,13 @@ export function StoriesViewer({ payload, occasion, assets, watermark = false }: 
   const embed = spotifyEmbedUrl(payload.spotifyTrackUrl);
 
   const slides = useMemo<Slide[]>(() => {
+    // A história (título + recado) fica na própria capa — não vira slide à parte.
     const s: Slide[] = [{ key: 'cover', kind: 'cover' }];
-    if (payload.letter?.trim()) s.push({ key: 'letter', kind: 'letter' });
     if (photos.length > 0) s.push({ key: 'photos', kind: 'photos' });
     if ((payload.timeline ?? []).length > 0) s.push({ key: 'timeline', kind: 'timeline' });
     if (embed) s.push({ key: 'music', kind: 'music' });
     return s;
-  }, [payload.letter, payload.timeline, photos.length, embed]);
+  }, [payload.timeline, photos.length, embed]);
 
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -46,6 +56,15 @@ export function StoriesViewer({ payload, occasion, assets, watermark = false }: 
   useEffect(() => {
     if (index !== clamped) setIndex(clamped);
   }, [index, clamped]);
+
+  // Prévia acompanha o passo do editor: pula pro slide da seção em foco — tanto
+  // ao trocar de passo quanto quando aquela seção passa a existir (ex.: colou o
+  // link do Spotify e o slide de trilha aparece).
+  useEffect(() => {
+    if (!focus) return;
+    const i = slides.findIndex((s) => s.kind === focus);
+    if (i >= 0) setIndex(i);
+  }, [focus, slides]);
 
   // Ao trocar de slide, volta o scroll pro topo.
   useEffect(() => {
@@ -104,14 +123,8 @@ export function StoriesViewer({ payload, occasion, assets, watermark = false }: 
       {/* Conteúdo do slide (rola na vertical) */}
       <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-6 pb-10 pt-20 sm:px-8">
         {slide?.kind === 'cover' && (
-          <CoverSlide
-            payload={payload}
-            occasion={occasion}
-            hasNext={slides.length > 1}
-            onPlay={() => go(1)}
-          />
+          <CoverSlide payload={payload} hasNext={slides.length > 1} onPlay={() => go(1)} />
         )}
-        {slide?.kind === 'letter' && <LetterSlide letter={payload.letter ?? ''} />}
         {slide?.kind === 'photos' && (
           <PhotosSlide photos={photos} onOpen={(i) => setLightbox(i)} />
         )}
@@ -176,23 +189,17 @@ export function StoriesViewer({ payload, occasion, assets, watermark = false }: 
 
 function CoverSlide({
   payload,
-  occasion,
   hasNext,
   onPlay,
 }: {
   payload: GiftPayload;
-  occasion?: string | null;
   hasNext: boolean;
   onPlay: () => void;
 }) {
-  const occ = occasionLabel(occasion);
-  const { title, recipientName, senderName } = payload;
+  const { title, recipientName, senderName, letter } = payload;
   return (
     <div className="flex min-h-full flex-col items-center justify-center text-center">
-      {occ && (
-        <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">{occ}</p>
-      )}
-      <h1 className="rb-chroma mt-3 font-display text-3xl font-bold leading-tight text-glow sm:text-4xl">
+      <h1 className="rb-chroma font-display text-3xl font-bold leading-tight text-glow sm:text-4xl">
         {title || 'A nossa história'}
       </h1>
       {(recipientName || senderName) && (
@@ -202,12 +209,17 @@ function CoverSlide({
           {senderName ? `de ${senderName}` : ''}
         </p>
       )}
+      {letter?.trim() && (
+        <p className="mt-6 max-w-prose whitespace-pre-wrap text-base leading-relaxed text-glow/90">
+          {letter}
+        </p>
+      )}
       {hasNext && (
         <button
           type="button"
           data-interactive
           onClick={onPlay}
-          className="mt-10 flex h-16 w-16 items-center justify-center rounded-full border-2 border-cyan text-cyan transition hover:scale-105 hover:bg-cyan/10"
+          className="mt-8 flex h-16 w-16 items-center justify-center rounded-full border-2 border-cyan text-cyan transition hover:scale-105 hover:bg-cyan/10"
           aria-label="Tocar a rebobinada"
         >
           <span className="ml-1 text-2xl">▶</span>
@@ -215,19 +227,6 @@ function CoverSlide({
       )}
       <p className="mt-4 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/70">
         aperta o play ◄◄
-      </p>
-    </div>
-  );
-}
-
-function LetterSlide({ letter }: { letter: string }) {
-  return (
-    <div className="mx-auto max-w-prose py-4">
-      <p className="mb-6 text-center font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
-        a carta
-      </p>
-      <p className="whitespace-pre-wrap text-center text-lg leading-relaxed text-glow/90">
-        {letter}
       </p>
     </div>
   );
