@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { ShareTools } from '../../components/share-tools';
+import { StoriesViewer } from '../../components/stories-viewer';
 import {
   checkoutCard,
   checkoutPix,
@@ -12,7 +13,7 @@ import {
   type PixCheckoutResult,
   type PlanKeyPaid,
 } from '../../lib/api';
-import { loadDraftRef, type DraftRef } from '../../lib/gift';
+import { loadDraftRef, type DraftRef, type Gift } from '../../lib/gift';
 import { PLANS_FALLBACK, priceDisplay, type Plan } from '../../lib/plans';
 
 const inputClass =
@@ -20,7 +21,6 @@ const inputClass =
 const labelClass = 'mb-2 block font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim';
 
 export default function PagarPage() {
-  const router = useRouter();
   const [ref, setRef] = useState<DraftRef | null>(null);
   const [noDraft, setNoDraft] = useState(false);
   const [plans, setPlans] = useState<Plan[]>(PLANS_FALLBACK);
@@ -34,6 +34,7 @@ export default function PagarPage() {
   const [pix, setPix] = useState<PixCheckoutResult['pix'] | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
+  const [paidGift, setPaidGift] = useState<Gift | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,11 +47,15 @@ export default function PagarPage() {
     setRef(existing);
     getGift(existing.id, existing.editToken)
       .then((g) => {
-        if (g.status === 'paid' && g.slug) router.replace(`/p/${g.slug}`);
+        // Já pago (voltou pra cá): mostra direto a tela de compartilhar.
+        if (g.status === 'paid' && g.slug) {
+          setPaidGift(g);
+          setPaid(true);
+        }
       })
       .catch(() => setNoDraft(true));
     getPlans().then((p) => p.length > 0 && setPlans(p));
-  }, [router]);
+  }, []);
 
   // Poll do pedido enquanto não confirmar (o webhook do Asaas é assíncrono).
   useEffect(() => {
@@ -66,13 +71,14 @@ export default function PagarPage() {
     return () => clearInterval(t);
   }, [orderId, paid]);
 
-  // Ao confirmar, busca o slug recém-gerado e leva pra página do presente.
+  // Ao confirmar, busca o presente recém-liberado (slug + payload) pra tela de
+  // compartilhamento — sem sair da página.
   useEffect(() => {
-    if (!paid || !ref) return;
+    if (!paid || !ref || paidGift) return;
     getGift(ref.id, ref.editToken)
-      .then((g) => g.slug && router.push(`/p/${g.slug}`))
+      .then((g) => setPaidGift(g))
       .catch(() => setError('Pagamento confirmado, mas não consegui abrir o presente. Recarregue.'));
-  }, [paid, ref, router]);
+  }, [paid, ref, paidGift]);
 
   async function payPix() {
     if (!ref) return;
@@ -128,9 +134,11 @@ export default function PagarPage() {
     <main className="mx-auto min-h-svh w-full max-w-lg px-5 py-10 sm:py-16">
       <header className="mb-8">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-dim">
-          <span className="rb-rew">◄◄</span> Rebobinaí · pagamento
+          <span className="rb-rew">◄◄</span> Rebobinaí · {paid ? 'pronto' : 'pagamento'}
         </p>
-        <h1 className="mt-2 font-display text-2xl font-bold text-glow">Libere o seu presente</h1>
+        <h1 className="mt-2 font-display text-2xl font-bold text-glow">
+          {paid ? 'Tá no ar! Agora é só compartilhar' : 'Libere o seu presente'}
+        </h1>
       </header>
 
       {error && (
@@ -140,9 +148,13 @@ export default function PagarPage() {
       )}
 
       {paid ? (
-        <p className="rounded-lg border border-cyan/50 bg-cyan/10 px-4 py-6 text-center text-glow">
-          ✓ Pagamento confirmado! Abrindo o seu presente…
-        </p>
+        paidGift && paidGift.slug ? (
+          <PostPurchase gift={paidGift} />
+        ) : (
+          <p className="rounded-lg border border-cyan/50 bg-cyan/10 px-4 py-6 text-center text-glow">
+            ✓ Pagamento confirmado! Preparando o seu presente…
+          </p>
+        )
       ) : (
         <>
           {/* Plano */}
@@ -251,6 +263,38 @@ export default function PagarPage() {
         </>
       )}
     </main>
+  );
+}
+
+/**
+ * Tela pós-compra: prévia da rebobinada liberada + ferramentas de compartilhar
+ * (WhatsApp, link com copiar, download do QR). A URL é montada no cliente a
+ * partir do domínio atual, então bate com onde a página foi aberta.
+ */
+function PostPurchase({ gift }: { gift: Gift }) {
+  const [url, setUrl] = useState('');
+  useEffect(() => {
+    if (gift.slug) setUrl(`${window.location.origin}/p/${gift.slug}`);
+  }, [gift.slug]);
+
+  return (
+    <div className="flex flex-col items-center gap-8">
+      <p className="w-full rounded-lg border border-cyan/50 bg-cyan/10 px-4 py-3 text-center text-sm text-glow">
+        ✓ Pagamento confirmado — sua rebobinada está no ar.
+      </p>
+
+      <StoriesViewer payload={gift.payload} occasion={gift.occasion} assets={gift.assets} />
+
+      {url && <ShareTools url={url} title={gift.payload.title} />}
+
+      <Link
+        href={url || '#'}
+        target="_blank"
+        className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim underline underline-offset-4 transition hover:text-cyan"
+      >
+        abrir a página do presente ►
+      </Link>
+    </div>
   );
 }
 
