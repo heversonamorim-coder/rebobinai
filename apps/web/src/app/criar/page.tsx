@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react';
 import { GiftPreview } from '../../components/gift-preview';
 import {
   createGift,
+  draftFromText,
   getGift,
   removeGiftAsset,
   updateGift,
   uploadGiftImage,
+  type DraftResult,
 } from '../../lib/api';
 import {
   OCCASIONS,
@@ -57,6 +59,14 @@ export default function CriarPage() {
 
   function patch(p: Partial<GiftPayload>) {
     setPayload((prev) => ({ ...prev, ...p }));
+  }
+
+  // Compositor de IA: aplica o rascunho gerado sobre o formulário e avança
+  // pra história, onde o cliente revisa o que a IA montou.
+  function applyDraft(result: DraftResult) {
+    if (result.occasion) setOccasion(result.occasion);
+    setPayload((prev) => ({ ...prev, ...result.payload }));
+    setStep(1);
   }
 
   function patchTimeline(items: TimelineItem[]) {
@@ -143,6 +153,7 @@ export default function CriarPage() {
 
       {step === 0 && (
         <Step title="Pra quem é o presente?" hint="Isso personaliza a rebobinada.">
+          <AiComposer onDraft={applyDraft} />
           <div className="mb-5">
             <label className={labelClass} htmlFor="occasion">
               Ocasião
@@ -455,6 +466,90 @@ function PhotoUploader({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Compositor de IA (F3-1): o cliente conta a história em um parágrafo e a IA
+ * monta o rascunho (título, recado, linha do tempo). É o atalho de conversão —
+ * fica no topo do primeiro passo, mas é opcional (dá pra preencher na mão).
+ */
+function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function generate() {
+    if (text.trim().length < 10) {
+      setErr('Conta um pouco mais da história (mínimo umas linhas).');
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    try {
+      const result = await draftFromText(text.trim());
+      onDraft(result);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Não consegui montar o rascunho agora.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mb-6 flex w-full items-center justify-between gap-3 rounded-xl border border-cyan/40 bg-cyan/5 px-5 py-4 text-left transition hover:border-cyan hover:bg-cyan/10"
+      >
+        <span>
+          <span className="block font-display text-base font-semibold text-glow">
+            ✨ Deixa a IA montar pra você
+          </span>
+          <span className="mt-0.5 block text-xs text-dim">
+            Conta a história num parágrafo e a gente cria o rascunho.
+          </span>
+        </span>
+        <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-cyan">abrir ►</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="mb-6 rounded-xl border border-cyan/40 bg-cyan/5 p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="font-display text-base font-semibold text-glow">
+          ✨ Conta a história de vocês
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
+        >
+          fechar
+        </button>
+      </div>
+      <textarea
+        className={`${inputClass} min-h-32 resize-y`}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ex.: A Marina e eu nos conhecemos em 2019 numa festa de amigos. Nosso primeiro date foi no cinema, choveu muito. Em 2021 fomos morar juntos e adotamos a Nina. Quero surpreender ela nos 4 anos de namoro…"
+      />
+      {err && <p className="mt-2 text-sm text-magenta">{err}</p>}
+      <button
+        type="button"
+        onClick={generate}
+        disabled={loading}
+        className="mt-3 w-full rounded-lg bg-cyan px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110 disabled:opacity-50"
+      >
+        {loading ? 'montando o rascunho…' : 'montar meu rascunho ✨'}
+      </button>
+      <p className="mt-2 text-center font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim">
+        você revisa e ajusta tudo depois
+      </p>
     </div>
   );
 }
