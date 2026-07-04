@@ -1,5 +1,5 @@
 import { Osd } from '@rebobinai/ui';
-import { assetUrl, occasionLabel, type GiftAsset, type GiftPayload } from '../lib/gift';
+import { assetUrl, type GiftAsset, type GiftPayload } from '../lib/gift';
 
 export interface GiftPreviewProps {
   payload: GiftPayload;
@@ -15,20 +15,13 @@ export interface GiftPreviewProps {
  * Componente presentacional puro — sem hooks — para ser usado tanto no editor
  * (preview do rascunho) quanto no SSR de /p/:slug (F1-3).
  */
-export function GiftPreview({ payload, occasion, assets, watermark = false }: GiftPreviewProps) {
+export function GiftPreview({ payload, assets, watermark = false }: GiftPreviewProps) {
   const { title, recipientName, senderName, letter, timeline, spotifyTrackUrl } = payload;
-  const occ = occasionLabel(occasion);
   const photos = (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a));
 
   return (
     <div className="rb-scanlines rb-vignette relative overflow-hidden rounded-2xl border border-[var(--line)] bg-tape-2 px-6 py-10 sm:px-10 sm:py-14">
       <Osd left="● PLAY" right="◄◄ REBOBINAÍ" />
-
-      {occ && (
-        <p className="mt-4 text-center font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
-          {occ}
-        </p>
-      )}
 
       <h1 className="rb-chroma mt-3 text-center font-display text-3xl font-bold leading-tight text-glow sm:text-5xl">
         {title || 'A nossa história'}
