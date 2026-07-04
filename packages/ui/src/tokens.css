@@ -51,18 +51,36 @@
   text-shadow:
     0.045em 0 var(--magenta),
     -0.045em 0 var(--cyan);
-  animation: rb-chroma 5s steps(1) infinite;
+  /* ciclo mais curto = a aberração cromática pisca com mais frequência */
+  animation: rb-chroma 3.2s steps(1) infinite;
 }
 
 @keyframes rb-chroma {
   0%,
-  92%,
+  40%,
+  47%,
+  90%,
   100% {
     text-shadow:
       0.045em 0 var(--magenta),
       -0.045em 0 var(--cyan);
+    transform: none;
   }
-  93% {
+  /* primeiro pisco de tracking */
+  42% {
+    text-shadow:
+      0.12em 0 var(--magenta),
+      -0.09em 0 var(--cyan);
+    transform: translateX(-2px);
+  }
+  45% {
+    text-shadow:
+      -0.06em 0 var(--magenta),
+      0.09em 0 var(--cyan);
+    transform: translateX(3px);
+  }
+  /* segundo pisco */
+  92% {
     text-shadow:
       0.12em 0 var(--magenta),
       -0.09em 0 var(--cyan);
@@ -73,12 +91,6 @@
       -0.06em 0 var(--magenta),
       0.09em 0 var(--cyan);
     transform: translateX(3px);
-  }
-  97% {
-    text-shadow:
-      0.045em 0 var(--magenta),
-      -0.045em 0 var(--cyan);
-    transform: none;
   }
 }
 
@@ -152,20 +164,20 @@
 @keyframes rb-vhs-tilt {
   0%,
   100% {
-    transform: rotate(-1.2deg) skewX(-1deg);
+    transform: rotate(-0.5deg) skewX(-0.6deg);
   }
   20% {
-    transform: rotate(1deg) skewX(1.2deg) translateY(-1px);
+    transform: rotate(0.4deg) skewX(0.8deg) translateY(-1px);
   }
   45% {
-    transform: rotate(-0.6deg) skewX(-0.6deg);
+    transform: rotate(-0.25deg) skewX(-0.4deg);
   }
   55% {
     /* micro-salto de tracking */
-    transform: rotate(0.4deg) skewX(2deg) translateY(1px);
+    transform: rotate(0.2deg) skewX(1deg) translateY(1px);
   }
   70% {
-    transform: rotate(1.2deg) skewX(0.4deg);
+    transform: rotate(0.5deg) skewX(0.3deg);
   }
 }
 
