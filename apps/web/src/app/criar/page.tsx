@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { GiftPreview } from '../../components/gift-preview';
+import { Lightbox } from '../../components/lightbox';
+import { StoriesViewer } from '../../components/stories-viewer';
 import {
   createGift,
   draftFromText,
   getGift,
   removeGiftAsset,
   updateGift,
-  uploadGiftImage,
+  uploadGiftImageProgress,
   type DraftResult,
 } from '../../lib/api';
 import {
@@ -24,6 +25,20 @@ import {
   type TimelineItem,
 } from '../../lib/gift';
 
+/** Um upload em andamento (barra de progresso na seção de fotos). */
+interface Upload {
+  id: string;
+  name: string;
+  pct: number;
+}
+
+const TrashIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+    <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6" />
+    <path d="M10 11v6M14 11v6" />
+  </svg>
+);
+
 const STEPS = ['Ocasião', 'História', 'Fotos', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
 
 const inputClass =
@@ -36,6 +51,7 @@ export default function CriarPage() {
   const [payload, setPayload] = useState<GiftPayload>({});
   const [ref, setRef] = useState<DraftRef | null>(null);
   const [assets, setAssets] = useState<GiftAsset[]>([]);
+  const [uploads, setUploads] = useState<Upload[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,19 +111,33 @@ export default function CriarPage() {
     }
   }
 
-  async function uploadPhotos(files: FileList) {
+  /**
+   * Sobe fotos com barra de progresso. Aceita novas fotos vindas do seletor,
+   * do arrastar-e-soltar ou de um momento da linha do tempo. Devolve os assets
+   * criados (a linha do tempo usa isso pra já vincular a foto ao momento).
+   */
+  async function uploadPhotos(files: File[]): Promise<GiftAsset[]> {
     // O upload precisa do rascunho já criado (para ter id + editToken).
-    let current = ref ?? (await saveDraft());
-    if (!current) return;
+    const current = ref ?? (await saveDraft());
+    if (!current) return [];
     setError(null);
-    for (const file of Array.from(files)) {
+    const created: GiftAsset[] = [];
+    for (const file of files) {
+      const uid = `${file.name}-${file.size}-${Math.random().toString(36).slice(2)}`;
+      setUploads((prev) => [...prev, { id: uid, name: file.name, pct: 0 }]);
       try {
-        const asset = await uploadGiftImage(current.id, current.editToken, file);
+        const asset = await uploadGiftImageProgress(current.id, current.editToken, file, (pct) =>
+          setUploads((prev) => prev.map((u) => (u.id === uid ? { ...u, pct } : u))),
+        );
         setAssets((prev) => [...prev, asset]);
+        created.push(asset);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Falha ao enviar a foto.');
+      } finally {
+        setUploads((prev) => prev.filter((u) => u.id !== uid));
       }
     }
+    return created;
   }
 
   async function removePhoto(assetId: string) {
@@ -217,14 +247,24 @@ export default function CriarPage() {
       )}
 
       {step === 2 && (
-        <Step title="As fotos de vocês" hint="Elas dão vida à rebobinada. Suba do celular ou do computador.">
-          <PhotoUploader assets={assets} onUpload={uploadPhotos} onRemove={removePhoto} />
+        <Step title="As fotos de vocês" hint="Elas dão vida à rebobinada. Arraste, ou suba do celular/computador.">
+          <PhotoUploader
+            assets={assets}
+            uploads={uploads}
+            onUpload={uploadPhotos}
+            onRemove={removePhoto}
+          />
         </Step>
       )}
 
       {step === 3 && (
         <Step title="Linha do tempo" hint="Momentos marcantes — opcional, mas emociona.">
-          <TimelineEditor items={payload.timeline ?? []} onChange={patchTimeline} />
+          <TimelineEditor
+            items={payload.timeline ?? []}
+            onChange={patchTimeline}
+            assets={assets}
+            onUpload={uploadPhotos}
+          />
         </Step>
       )}
 
@@ -281,7 +321,10 @@ export default function CriarPage() {
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-magenta" />
             prévia ao vivo
           </p>
-          <GiftPreview payload={payload} occasion={occasion} assets={assets} watermark />
+          <StoriesViewer payload={payload} occasion={occasion} assets={assets} watermark />
+          <p className="mt-3 text-center font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/70">
+            toque nas laterais pra navegar
+          </p>
         </aside>
       </div>
     </main>
@@ -355,9 +398,13 @@ function Field({
 function TimelineEditor({
   items,
   onChange,
+  assets,
+  onUpload,
 }: {
   items: TimelineItem[];
   onChange: (items: TimelineItem[]) => void;
+  assets: GiftAsset[];
+  onUpload: (files: File[]) => Promise<GiftAsset[]>;
 }) {
   function update(i: number, patch: Partial<TimelineItem>) {
     onChange(items.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
@@ -380,9 +427,9 @@ function TimelineEditor({
             <button
               type="button"
               onClick={() => remove(i)}
-              className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
+              className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
             >
-              remover
+              <TrashIcon /> remover
             </button>
           </div>
           <input
@@ -398,10 +445,16 @@ function TimelineEditor({
             onChange={(e) => update(i, { title: e.target.value })}
           />
           <textarea
-            className={`${inputClass} min-h-20 resize-y`}
+            className={`${inputClass} mb-3 min-h-20 resize-y`}
             value={item.description ?? ''}
             placeholder="Detalhes (opcional)"
             onChange={(e) => update(i, { description: e.target.value })}
+          />
+          <MomentPhoto
+            selectedId={item.photoAssetId}
+            assets={assets}
+            onSelect={(assetId) => update(i, { photoAssetId: assetId })}
+            onUpload={onUpload}
           />
         </div>
       ))}
@@ -416,20 +469,164 @@ function TimelineEditor({
   );
 }
 
+/** Foto opcional de um momento: escolhe uma já enviada ou sobe uma nova. */
+function MomentPhoto({
+  selectedId,
+  assets,
+  onSelect,
+  onUpload,
+}: {
+  selectedId?: string;
+  assets: GiftAsset[];
+  onSelect: (assetId: string | undefined) => void;
+  onUpload: (files: File[]) => Promise<GiftAsset[]>;
+}) {
+  const [open, setOpen] = useState(false);
+  const photos = assets.filter((a) => a.type === 'image');
+  const selected = photos.find((a) => a.id === selectedId);
+
+  async function uploadNew(files: File[]) {
+    const created = await onUpload(files);
+    if (created[0]) {
+      onSelect(created[0].id);
+      setOpen(false);
+    }
+  }
+
+  if (selected) {
+    return (
+      <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={assetUrl(selected)}
+          alt=""
+          className="h-16 w-16 rounded-lg border border-[var(--line)] object-cover"
+        />
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan hover:underline"
+        >
+          trocar foto
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelect(undefined)}
+          className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
+        >
+          <TrashIcon /> remover
+        </button>
+        {open && <PhotoPicker photos={photos} onPick={(id) => { onSelect(id); setOpen(false); }} onUploadNew={uploadNew} />}
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-cyan"
+      >
+        + foto do momento (opcional)
+      </button>
+    );
+  }
+
+  return <PhotoPicker photos={photos} onPick={onSelect} onUploadNew={uploadNew} onClose={() => setOpen(false)} />;
+}
+
+function PhotoPicker({
+  photos,
+  onPick,
+  onUploadNew,
+  onClose,
+}: {
+  photos: GiftAsset[];
+  onPick: (assetId: string) => void;
+  onUploadNew: (files: File[]) => void | Promise<void>;
+  onClose?: () => void;
+}) {
+  return (
+    <div className="mt-2 w-full rounded-lg border border-[var(--line)] bg-tape/60 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim">
+          escolha uma foto sua
+        </span>
+        {onClose && (
+          <button type="button" onClick={onClose} className="font-mono text-[0.6rem] text-dim hover:text-magenta">
+            fechar
+          </button>
+        )}
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {photos.map((a) => (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            key={a.id}
+            src={assetUrl(a)}
+            alt=""
+            onClick={() => onPick(a.id)}
+            className="h-16 w-16 shrink-0 cursor-pointer rounded-lg border border-[var(--line)] object-cover hover:border-cyan"
+          />
+        ))}
+        <label className="flex h-16 w-16 shrink-0 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--line)] text-center text-dim hover:border-cyan hover:text-cyan">
+          <span className="text-lg leading-none">＋</span>
+          <span className="font-mono text-[0.5rem] uppercase">nova</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) void onUploadNew(Array.from(e.target.files));
+              e.target.value = '';
+            }}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function PhotoUploader({
   assets,
+  uploads,
   onUpload,
   onRemove,
 }: {
   assets: GiftAsset[];
-  onUpload: (files: FileList) => void | Promise<void>;
+  uploads: Upload[];
+  onUpload: (files: File[]) => void | Promise<unknown>;
   onRemove: (assetId: string) => void | Promise<void>;
 }) {
+  const [dragging, setDragging] = useState(false);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const photos = assets.filter((a) => a.type === 'image');
+  const lightboxPhotos = photos.map((a) => ({ id: a.id, url: assetUrl(a) }));
+
+  function pickImages(list: FileList | null): File[] {
+    return Array.from(list ?? []).filter((f) => f.type.startsWith('image/'));
+  }
+
   return (
     <div>
-      <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--line)] py-10 text-center transition hover:border-cyan">
-        <span className="font-display text-lg text-glow">＋ adicionar fotos</span>
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const files = pickImages(e.dataTransfer.files);
+          if (files.length) void onUpload(files);
+        }}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center transition ${
+          dragging ? 'border-cyan bg-cyan/10' : 'border-[var(--line)] hover:border-cyan'
+        }`}
+      >
+        <span className="font-display text-lg text-glow">＋ arraste ou adicione fotos</span>
         <span className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
           jpg, png ou webp · até 10mb cada
         </span>
@@ -439,32 +636,63 @@ function PhotoUploader({
           multiple
           className="hidden"
           onChange={(e) => {
-            if (e.target.files?.length) void onUpload(e.target.files);
+            const files = pickImages(e.target.files);
+            if (files.length) void onUpload(files);
             e.target.value = '';
           }}
         />
       </label>
 
+      {uploads.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {uploads.map((u) => (
+            <div key={u.id}>
+              <div className="mb-1 flex justify-between font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim">
+                <span className="truncate">{u.name}</span>
+                <span>{u.pct}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-glow/15">
+                <div
+                  className="h-full rounded-full bg-cyan transition-all duration-200"
+                  style={{ width: `${u.pct}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {photos.length > 0 && (
         <div className="mt-4 grid grid-cols-3 gap-3">
-          {photos.map((a) => (
+          {photos.map((a, i) => (
             <div key={a.id} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={assetUrl(a)}
                 alt=""
-                className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
+                onClick={() => setLightbox(i)}
+                className="aspect-square w-full cursor-pointer rounded-lg border border-[var(--line)] object-cover transition hover:brightness-110"
               />
               <button
                 type="button"
                 onClick={() => onRemove(a.id)}
-                className="absolute right-1 top-1 rounded bg-tape/80 px-2 py-1 font-mono text-[0.6rem] uppercase tracking-wide text-glow hover:text-magenta"
+                className="absolute right-1 top-1 rounded bg-tape/80 p-1.5 text-glow hover:text-magenta"
+                aria-label="Remover foto"
               >
-                remover
+                <TrashIcon />
               </button>
             </div>
           ))}
         </div>
+      )}
+
+      {lightbox !== null && lightboxPhotos.length > 0 && (
+        <Lightbox
+          photos={lightboxPhotos}
+          index={lightbox}
+          onIndex={(i) => setLightbox(i)}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </div>
   );

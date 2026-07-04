@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import QRCode from 'qrcode';
 import { CopyLink } from '../../../components/copy-link';
-import { GiftPreview } from '../../../components/gift-preview';
+import { StoriesViewer } from '../../../components/stories-viewer';
 import { getPublicGift } from '../../../lib/api';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rebobinai.app';
@@ -46,7 +46,7 @@ export default async function GiftPublicPage({ params }: Params) {
 
   return (
     <main className="mx-auto min-h-svh w-full max-w-2xl px-5 py-10 sm:py-16">
-      <GiftPreview
+      <StoriesViewer
         payload={gift.payload}
         occasion={gift.occasion}
         assets={gift.assets}
