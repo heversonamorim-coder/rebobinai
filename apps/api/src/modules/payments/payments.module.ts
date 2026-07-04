@@ -5,6 +5,7 @@ import { PromotionsModule } from '../promotions/promotions.module';
 import { AsaasClient } from './asaas.client';
 import { AsaasWebhookController } from './asaas-webhook.controller';
 import { CheckoutController } from './checkout.controller';
+import { FreightService } from './freight.service';
 import { OrderRepository } from './order.repository';
 import { PaymentsService } from './payments.service';
 
@@ -16,7 +17,7 @@ import { PaymentsService } from './payments.service';
 @Module({
   imports: [GiftModule, PromotionsModule, NotificationsModule],
   controllers: [CheckoutController, AsaasWebhookController],
-  providers: [PaymentsService, AsaasClient, OrderRepository],
+  providers: [PaymentsService, AsaasClient, OrderRepository, FreightService],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

@@ -31,12 +31,19 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
       {plan.tagline && <p className="mt-1 text-sm text-dim">{plan.tagline}</p>}
 
       <div className="mt-5">
+        {/* Plano físico: o preço varia com o produto → "a partir de". */}
+        {plan.key === 'quadro' && (
+          <span className="block font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim">
+            a partir de
+          </span>
+        )}
         {price.strikethrough && (
           <span className="block font-mono text-xs text-dim/60 line-through">
             {price.strikethrough}
           </span>
         )}
         <span className="font-display text-3xl font-bold text-cyan">{price.current}</span>
+        {plan.key === 'quadro' && <span className="ml-1 text-sm text-dim">+ frete</span>}
       </div>
       {price.note && (
         <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-magenta">

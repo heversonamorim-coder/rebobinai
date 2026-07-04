@@ -7,14 +7,24 @@ import { StoriesViewer } from '../../components/stories-viewer';
 import {
   checkoutCard,
   checkoutPix,
+  getFreight,
   getGift,
   getOrderStatus,
   getPlans,
+  uploadGiftImageProgress,
+  type PhysicalCheckout,
   type PixCheckoutResult,
   type PlanKeyPaid,
 } from '../../lib/api';
-import { loadDraftRef, type DraftRef, type Gift } from '../../lib/gift';
-import { PLANS_FALLBACK, priceDisplay, type Plan } from '../../lib/plans';
+import { assetUrl, loadDraftRef, type DraftRef, type Gift, type GiftAsset } from '../../lib/gift';
+import { formatBRL, PLANS_FALLBACK, priceDisplay, type Plan } from '../../lib/plans';
+import {
+  emptyShipping,
+  PHYSICAL_PRODUCTS,
+  type FreightQuote,
+  type ProductKey,
+  type Shipping,
+} from '../../lib/products';
 
 const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
@@ -30,6 +40,14 @@ export default function PagarPage() {
   const [customer, setCustomer] = useState({ name: '', email: '', cpfCnpj: '' });
   const [card, setCard] = useState({ holderName: '', number: '', expiryMonth: '', expiryYear: '', ccv: '' });
   const [holder, setHolder] = useState({ postalCode: '', addressNumber: '', phone: '' });
+
+  // Plano físico ("+Lembrança física"): produto, foto (caneca), endereço, frete.
+  const [assets, setAssets] = useState<GiftAsset[]>([]);
+  const [product, setProduct] = useState<ProductKey | ''>('');
+  const [photoAssetId, setPhotoAssetId] = useState<string>('');
+  const [shipping, setShipping] = useState<Shipping>(emptyShipping());
+  const [freight, setFreight] = useState<FreightQuote | null>(null);
+  const [freightErr, setFreightErr] = useState<string | null>(null);
 
   const [pix, setPix] = useState<PixCheckoutResult['pix'] | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -47,6 +65,7 @@ export default function PagarPage() {
     setRef(existing);
     getGift(existing.id, existing.editToken)
       .then((g) => {
+        setAssets(g.assets ?? []);
         // Já pago (voltou pra cá): mostra direto a tela de compartilhar.
         if (g.status === 'paid' && g.slug) {
           setPaidGift(g);
@@ -56,6 +75,33 @@ export default function PagarPage() {
       .catch(() => setNoDraft(true));
     getPlans().then((p) => p.length > 0 && setPlans(p));
   }, []);
+
+  const isPhysical = planKey === 'quadro';
+
+  // Cotação de frete por CEP — recalcula quando muda produto ou CEP (8 dígitos).
+  useEffect(() => {
+    if (!isPhysical || !product) {
+      setFreight(null);
+      return;
+    }
+    const cep = shipping.cep.replace(/\D/g, '');
+    if (cep.length !== 8) {
+      setFreight(null);
+      return;
+    }
+    let alive = true;
+    setFreightErr(null);
+    getFreight(cep, product)
+      .then((q) => alive && setFreight(q))
+      .catch((e) => {
+        if (!alive) return;
+        setFreight(null);
+        setFreightErr(e instanceof Error ? e.message : 'Não consegui calcular o frete.');
+      });
+    return () => {
+      alive = false;
+    };
+  }, [isPhysical, product, shipping.cep]);
 
   // Poll do pedido enquanto não confirmar (o webhook do Asaas é assíncrono).
   useEffect(() => {
@@ -80,12 +126,17 @@ export default function PagarPage() {
       .catch(() => setError('Pagamento confirmado, mas não consegui abrir o presente. Recarregue.'));
   }, [paid, ref, paidGift]);
 
+  // Campos extras do plano físico (vazios nos planos digitais).
+  const physical: PhysicalCheckout = isPhysical
+    ? { product: product || undefined, photoAssetId: photoAssetId || undefined, shipping }
+    : {};
+
   async function payPix() {
     if (!ref) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await checkoutPix({ giftId: ref.id, editToken: ref.editToken, planKey, customer });
+      const res = await checkoutPix({ giftId: ref.id, editToken: ref.editToken, planKey, customer, ...physical });
       setPix(res.pix);
       setOrderId(res.orderId);
     } catch (e) {
@@ -107,6 +158,7 @@ export default function PagarPage() {
         customer,
         card,
         holder,
+        ...physical,
       });
       setOrderId(res.orderId);
       if (res.status === 'paid') setPaid(true);
@@ -116,6 +168,32 @@ export default function PagarPage() {
       setLoading(false);
     }
   }
+
+  async function uploadMugPhoto(file: File) {
+    if (!ref) return;
+    try {
+      const asset = await uploadGiftImageProgress(ref.id, ref.editToken, file);
+      setAssets((prev) => [...prev, asset]);
+      setPhotoAssetId(asset.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Falha ao enviar a foto.');
+    }
+  }
+
+  // Total e validação do plano físico.
+  const shippingComplete = Boolean(
+    shipping.name &&
+      shipping.phone &&
+      shipping.cep.replace(/\D/g, '').length === 8 &&
+      shipping.street &&
+      shipping.number &&
+      shipping.district &&
+      shipping.city &&
+      shipping.uf,
+  );
+  const physicalValid =
+    !isPhysical ||
+    Boolean(product && shippingComplete && freight && (product !== 'caneca' || photoAssetId));
 
   if (noDraft) {
     return (
@@ -129,6 +207,15 @@ export default function PagarPage() {
   }
 
   const selected = plans.find((p) => p.key === planKey);
+  // No plano físico o valor é produto + frete; nos digitais, o preço do plano.
+  const amountLabel = isPhysical
+    ? freight
+      ? formatBRL(freight.total)
+      : 'calcule o frete'
+    : selected
+      ? priceDisplay(selected).current
+      : '';
+  const payDisabled = loading || (isPhysical && !physicalValid);
 
   return (
     <main className="mx-auto min-h-svh w-full max-w-lg px-5 py-10 sm:py-16">
@@ -186,6 +273,118 @@ export default function PagarPage() {
             </div>
           </div>
 
+          {/* Plano físico: produto + foto (caneca) + endereço + frete */}
+          {isPhysical && (
+            <div className="mb-6 space-y-5 rounded-xl border border-magenta/40 bg-panel/30 p-5">
+              <div>
+                <span className={labelClass}>Produto</span>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {PHYSICAL_PRODUCTS.map((p) => {
+                    const active = product === p.key;
+                    return (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => {
+                          setProduct(p.key);
+                          if (!p.needsPhoto) setPhotoAssetId('');
+                        }}
+                        className={`rounded-lg border px-4 py-3 text-left ${
+                          active ? 'border-cyan bg-panel' : 'border-[var(--line)] bg-panel/40'
+                        }`}
+                      >
+                        <span className="block font-display text-glow">{p.name}</span>
+                        <span className="mt-1 block font-mono text-xs text-cyan">
+                          {formatBRL(p.price)} + frete
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {product === 'caneca' && (
+                <div>
+                  <span className={labelClass}>Foto da caneca</span>
+                  <div className="flex flex-wrap gap-2">
+                    {assets
+                      .filter((a) => a.type === 'image' && assetUrl(a))
+                      .map((a) => (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          key={a.id}
+                          src={assetUrl(a)}
+                          alt=""
+                          onClick={() => setPhotoAssetId(a.id)}
+                          className={`h-16 w-16 cursor-pointer rounded-lg border-2 object-cover ${
+                            photoAssetId === a.id ? 'border-cyan' : 'border-[var(--line)]'
+                          }`}
+                        />
+                      ))}
+                    <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--line)] text-center text-dim hover:border-cyan hover:text-cyan">
+                      <span className="text-lg leading-none">＋</span>
+                      <span className="font-mono text-[0.5rem] uppercase">subir</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void uploadMugPhoto(f);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+                    escolha uma foto sua ou suba uma nova
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <span className={labelClass}>Entrega</span>
+                <div className="space-y-3">
+                  <Field label="Nome de quem recebe" value={shipping.name} onChange={(v) => setShipping({ ...shipping, name: v })} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="CEP" value={shipping.cep} onChange={(v) => setShipping({ ...shipping, cep: v })} placeholder="00000-000" />
+                    <Field label="Telefone" value={shipping.phone} onChange={(v) => setShipping({ ...shipping, phone: v })} placeholder="DDD + número" />
+                  </div>
+                  <div className="grid grid-cols-[1fr_90px] gap-3">
+                    <Field label="Rua" value={shipping.street} onChange={(v) => setShipping({ ...shipping, street: v })} />
+                    <Field label="Nº" value={shipping.number} onChange={(v) => setShipping({ ...shipping, number: v })} />
+                  </div>
+                  <Field label="Complemento (opcional)" value={shipping.complement ?? ''} onChange={(v) => setShipping({ ...shipping, complement: v })} />
+                  <div className="grid grid-cols-[1fr_1fr_70px] gap-3">
+                    <Field label="Bairro" value={shipping.district} onChange={(v) => setShipping({ ...shipping, district: v })} />
+                    <Field label="Cidade" value={shipping.city} onChange={(v) => setShipping({ ...shipping, city: v })} />
+                    <Field label="UF" value={shipping.uf} onChange={(v) => setShipping({ ...shipping, uf: v.toUpperCase().slice(0, 2) })} />
+                  </div>
+                </div>
+                {freightErr && <p className="mt-2 text-sm text-magenta">{freightErr}</p>}
+              </div>
+
+              {product && (
+                <div className="rounded-lg border border-[var(--line)] bg-tape/50 p-4 font-mono text-xs text-dim">
+                  <div className="flex justify-between">
+                    <span>produto</span>
+                    <span className="text-glow">
+                      {formatBRL(PHYSICAL_PRODUCTS.find((p) => p.key === product)?.price ?? 0)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex justify-between">
+                    <span>frete{freight ? ` · ${freight.region}` : ''}</span>
+                    <span className="text-glow">{freight ? formatBRL(freight.shippingCost) : 'informe o CEP'}</span>
+                  </div>
+                  <div className="mt-2 flex justify-between border-t border-[var(--line)] pt-2 text-sm">
+                    <span className="text-cyan">total</span>
+                    <span className="font-display text-cyan">{freight ? formatBRL(freight.total) : '—'}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Dados do cliente */}
           <div className="mb-6 space-y-4">
             <Field label="Seu nome" value={customer.name} onChange={(v) => setCustomer({ ...customer, name: v })} />
@@ -213,10 +412,10 @@ export default function PagarPage() {
             <button
               type="button"
               onClick={payPix}
-              disabled={loading}
+              disabled={payDisabled}
               className="w-full rounded-lg bg-magenta px-6 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110 disabled:opacity-50"
             >
-              {loading ? 'gerando…' : `gerar Pix · ${selected ? priceDisplay(selected).current : ''}`}
+              {loading ? 'gerando…' : `gerar Pix · ${amountLabel}`}
             </button>
           )}
 
@@ -249,10 +448,10 @@ export default function PagarPage() {
               <button
                 type="button"
                 onClick={payCard}
-                disabled={loading}
+                disabled={payDisabled}
                 className="w-full rounded-lg bg-magenta px-6 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110 disabled:opacity-50"
               >
-                {loading ? 'processando…' : `pagar ${selected ? priceDisplay(selected).current : ''}`}
+                {loading ? 'processando…' : `pagar ${amountLabel}`}
               </button>
             </div>
           )}
