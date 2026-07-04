@@ -4,6 +4,8 @@ export interface TimelineItem {
   date?: string;
   title: string;
   description?: string;
+  /** Foto opcional do momento — id de um GiftAsset já enviado. */
+  photoAssetId?: string;
 }
 
 export interface GiftPayload {

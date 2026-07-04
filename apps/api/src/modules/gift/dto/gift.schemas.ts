@@ -10,6 +10,8 @@ export const timelineItemSchema = z.object({
   date: z.string().max(120).optional(), // texto livre: "2019", "nosso 1º date"
   title: z.string().max(160),
   description: z.string().max(2000).optional(),
+  // Foto opcional do momento — referencia um GiftAsset já enviado (id no cuid).
+  photoAssetId: z.string().max(60).optional(),
 });
 
 export const giftPayloadSchema = z

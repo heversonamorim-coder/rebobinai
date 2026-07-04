@@ -113,26 +113,46 @@ export function getOrderStatus(orderId: string): Promise<OrderStatus> {
   return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
 }
 
-/** Upload de foto do presente (F3-3). Multipart — o browser define o boundary. */
-export async function uploadGiftImage(id: string, editToken: string, file: File): Promise<GiftAsset> {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await fetch(`${BASE}/gifts/${id}/assets/upload`, {
-    method: 'POST',
-    headers: { 'x-edit-token': editToken },
-    body: form,
+/**
+ * Upload com progresso (XHR) — permite mostrar a barra enquanto o arquivo sobe.
+ * `onProgress` recebe 0–100. Cai pra indeterminado se o total não vier.
+ */
+export function uploadGiftImageProgress(
+  id: string,
+  editToken: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<GiftAsset> {
+  return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append('file', file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${BASE}/gifts/${id}/assets/upload`);
+    xhr.setRequestHeader('x-edit-token', editToken);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText) as GiftAsset);
+        } catch {
+          reject(new ApiError(xhr.status, 'Resposta inválida do servidor.'));
+        }
+      } else {
+        let message = `Erro ${xhr.status}`;
+        try {
+          const body = JSON.parse(xhr.responseText) as { message?: string };
+          if (body?.message) message = body.message;
+        } catch {
+          // corpo não-JSON
+        }
+        reject(new ApiError(xhr.status, message));
+      }
+    };
+    xhr.onerror = () => reject(new ApiError(0, 'Falha de rede no upload.'));
+    xhr.send(form);
   });
-  if (!res.ok) {
-    let message = `Erro ${res.status}`;
-    try {
-      const body = (await res.json()) as { message?: string };
-      if (body?.message) message = body.message;
-    } catch {
-      // corpo não-JSON
-    }
-    throw new ApiError(res.status, message);
-  }
-  return res.json() as Promise<GiftAsset>;
 }
 
 export function removeGiftAsset(id: string, editToken: string, assetId: string): Promise<unknown> {
