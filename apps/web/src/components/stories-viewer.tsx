@@ -1,6 +1,5 @@
 'use client';
 
-import { Osd } from '@rebobinai/ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { assetUrl, occasionLabel, type GiftAsset, type GiftPayload } from '../lib/gift';
 import { spotifyEmbedUrl } from '../lib/spotify';
@@ -90,16 +89,20 @@ export function StoriesViewer({ payload, occasion, assets, watermark = false }: 
           <span key={s.key} className="h-1 flex-1 overflow-hidden rounded-full bg-glow/15">
             <span
               className="block h-full rounded-full bg-cyan transition-all duration-300"
-              style={{ width: i < clamped ? '100%' : i === clamped ? '100%' : '0%' }}
+              style={{ width: i <= clamped ? '100%' : '0%' }}
             />
           </span>
         ))}
       </div>
 
-      <Osd left="● PLAY" right="◄◄ REBOBINAÍ" />
+      {/* Rótulos do OSD — abaixo da barra pra não sobrepor os textos */}
+      <div className="rb-osd pointer-events-none absolute inset-x-0 top-8 z-20 flex justify-between px-6 sm:px-8">
+        <span className="rb-rec">● PLAY</span>
+        <span>◄◄ REBOBINAÍ</span>
+      </div>
 
       {/* Conteúdo do slide (rola na vertical) */}
-      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-6 pb-10 pt-16 sm:px-8">
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-6 pb-10 pt-20 sm:px-8">
         {slide?.kind === 'cover' && (
           <CoverSlide
             payload={payload}
