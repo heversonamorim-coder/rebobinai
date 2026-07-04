@@ -156,6 +156,49 @@ export function cloneExample(id: string): Promise<Gift> {
   return request<Gift>(`/examples/${id}/clone`, { method: 'POST' });
 }
 
+/**
+ * Compositor de IA (F3-1): um parágrafo → rascunho editável { occasion, payload }.
+ * A API pode devolver campos como null; normalizamos para undefined para casar
+ * com GiftPayload e não sobrescrever o formulário com nulos.
+ */
+interface AiDraftResponse {
+  occasion: string | null;
+  payload: {
+    title: string;
+    recipientName: string | null;
+    senderName: string | null;
+    letter: string;
+    timeline: { date: string | null; title: string; description: string | null }[];
+  };
+}
+
+export interface DraftResult {
+  occasion?: string;
+  payload: GiftPayload;
+}
+
+export async function draftFromText(text: string): Promise<DraftResult> {
+  const res = await request<AiDraftResponse>('/ai/draft', {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+  const p = res.payload;
+  return {
+    occasion: res.occasion ?? undefined,
+    payload: {
+      title: p.title,
+      recipientName: p.recipientName ?? undefined,
+      senderName: p.senderName ?? undefined,
+      letter: p.letter,
+      timeline: (p.timeline ?? []).map((t) => ({
+        date: t.date ?? undefined,
+        title: t.title,
+        description: t.description ?? undefined,
+      })),
+    },
+  };
+}
+
 /** Catálogo de planos (landing/checkout). Revalida de hora em hora (ISR). */
 export async function getPlans(): Promise<Plan[]> {
   try {
