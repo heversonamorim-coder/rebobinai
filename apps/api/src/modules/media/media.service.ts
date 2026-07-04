@@ -36,8 +36,9 @@ export class MediaService {
     return Boolean(this.client && this.bucket);
   }
 
+  /** URL pública da imagem. Vazia se R2_PUBLIC_BASE_URL não estiver setada. */
   publicUrl(r2Key: string): string {
-    return `${this.publicBase}/${r2Key}`;
+    return this.publicBase ? `${this.publicBase}/${r2Key}` : '';
   }
 
   /**
