@@ -3,18 +3,26 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { GiftPreview } from '../../components/gift-preview';
-import { createGift, updateGift, getGift } from '../../lib/api';
+import {
+  createGift,
+  getGift,
+  removeGiftAsset,
+  updateGift,
+  uploadGiftImage,
+} from '../../lib/api';
 import {
   OCCASIONS,
+  assetUrl,
   clearDraftRef,
   loadDraftRef,
   saveDraftRef,
   type DraftRef,
+  type GiftAsset,
   type GiftPayload,
   type TimelineItem,
 } from '../../lib/gift';
 
-const STEPS = ['Ocasião', 'História', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
+const STEPS = ['Ocasião', 'História', 'Fotos', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
 
 const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
@@ -25,6 +33,7 @@ export default function CriarPage() {
   const [occasion, setOccasion] = useState('');
   const [payload, setPayload] = useState<GiftPayload>({});
   const [ref, setRef] = useState<DraftRef | null>(null);
+  const [assets, setAssets] = useState<GiftAsset[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +50,7 @@ export default function CriarPage() {
         setRef(existing);
         setOccasion(g.occasion ?? '');
         setPayload(g.payload ?? {});
+        setAssets(g.assets ?? []);
       })
       .catch(() => clearDraftRef());
   }, []);
@@ -72,6 +82,31 @@ export default function CriarPage() {
       return null;
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function uploadPhotos(files: FileList) {
+    // O upload precisa do rascunho já criado (para ter id + editToken).
+    let current = ref ?? (await saveDraft());
+    if (!current) return;
+    setError(null);
+    for (const file of Array.from(files)) {
+      try {
+        const asset = await uploadGiftImage(current.id, current.editToken, file);
+        setAssets((prev) => [...prev, asset]);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Falha ao enviar a foto.');
+      }
+    }
+  }
+
+  async function removePhoto(assetId: string) {
+    if (!ref) return;
+    try {
+      await removeGiftAsset(ref.id, ref.editToken, assetId);
+      setAssets((prev) => prev.filter((a) => a.id !== assetId));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Falha ao remover a foto.');
     }
   }
 
@@ -171,12 +206,18 @@ export default function CriarPage() {
       )}
 
       {step === 2 && (
+        <Step title="As fotos de vocês" hint="Elas dão vida à rebobinada. Suba do celular ou do computador.">
+          <PhotoUploader assets={assets} onUpload={uploadPhotos} onRemove={removePhoto} />
+        </Step>
+      )}
+
+      {step === 3 && (
         <Step title="Linha do tempo" hint="Momentos marcantes — opcional, mas emociona.">
           <TimelineEditor items={payload.timeline ?? []} onChange={patchTimeline} />
         </Step>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <Step title="A trilha sonora" hint="Cola o link da música de vocês (Spotify).">
           <Field
             label="Link da música (opcional)"
@@ -187,7 +228,7 @@ export default function CriarPage() {
         </Step>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <Step title="Seu presente está pronto ◄◄" hint="Confira a prévia ao lado. O link e o QR liberam após o pagamento.">
           <LockedLink />
         </Step>
@@ -229,7 +270,7 @@ export default function CriarPage() {
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-magenta" />
             prévia ao vivo
           </p>
-          <GiftPreview payload={payload} occasion={occasion} watermark />
+          <GiftPreview payload={payload} occasion={occasion} assets={assets} watermark />
         </aside>
       </div>
     </main>
@@ -360,6 +401,60 @@ function TimelineEditor({
       >
         + adicionar momento
       </button>
+    </div>
+  );
+}
+
+function PhotoUploader({
+  assets,
+  onUpload,
+  onRemove,
+}: {
+  assets: GiftAsset[];
+  onUpload: (files: FileList) => void | Promise<void>;
+  onRemove: (assetId: string) => void | Promise<void>;
+}) {
+  const photos = assets.filter((a) => a.type === 'image');
+  return (
+    <div>
+      <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-[var(--line)] py-10 text-center transition hover:border-cyan">
+        <span className="font-display text-lg text-glow">＋ adicionar fotos</span>
+        <span className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim">
+          jpg, png ou webp · até 10mb cada
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.length) void onUpload(e.target.files);
+            e.target.value = '';
+          }}
+        />
+      </label>
+
+      {photos.length > 0 && (
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {photos.map((a) => (
+            <div key={a.id} className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={assetUrl(a.r2Key)}
+                alt=""
+                className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => onRemove(a.id)}
+                className="absolute right-1 top-1 rounded bg-tape/80 px-2 py-1 font-mono text-[0.6rem] uppercase tracking-wide text-glow hover:text-magenta"
+              >
+                remover
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
+import { MediaService } from './media.service';
 
 /**
- * Bounded context: media
- * Regra do monólito modular: este módulo NÃO acessa tabelas de outros módulos.
- * Comunicação apenas por serviços internos exportados e eventos de domínio (outbox).
+ * Bounded context: media (pipeline de imagem + storage R2).
+ * Expõe MediaService para outros módulos (o gift usa no upload de fotos).
  */
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
-  exports: [],
+  providers: [MediaService],
+  exports: [MediaService],
 })
 export class MediaModule {}

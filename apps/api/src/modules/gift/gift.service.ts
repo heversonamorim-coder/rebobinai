@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { MediaService } from '../media/media.service';
 import { GiftRepository } from './gift.repository';
 import { AddAssetDto, CreateGiftDto, UpdateGiftDto } from './dto/gift.schemas';
 import { generateSlug } from './slug';
@@ -11,7 +12,10 @@ import { generateSlug } from './slug';
  */
 @Injectable()
 export class GiftService {
-  constructor(private readonly repo: GiftRepository) {}
+  constructor(
+    private readonly repo: GiftRepository,
+    private readonly media: MediaService,
+  ) {}
 
   createDraft(dto: CreateGiftDto) {
     return this.repo.create({
@@ -65,6 +69,18 @@ export class GiftService {
     const { count } = await this.repo.removeAsset(id, assetId);
     if (count === 0) throw new NotFoundException('Asset não encontrado');
     return { removed: count };
+  }
+
+  /** Upload de foto (F3-3): otimiza + envia ao R2 e anexa como GiftAsset. */
+  async uploadImageAsset(id: string, editToken: string, buffer: Buffer) {
+    const gift = await this.mustEdit(id, editToken);
+    const { r2Key } = await this.media.uploadImage(buffer);
+    return this.repo.addAsset({
+      giftId: id,
+      type: 'image',
+      r2Key,
+      order: gift.assets.length,
+    });
   }
 
   /**
