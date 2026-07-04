@@ -14,6 +14,24 @@ export const timelineItemSchema = z.object({
   photoAssetId: z.string().max(60).optional(),
 });
 
+/** Contador de dias — data neutra (nunca assume casal) + label editável. */
+export const counterSchema = z.object({
+  targetDate: z.string().max(40).optional(), // ISO "2019-03-14"
+  label: z.string().max(80).optional(),
+});
+
+/**
+ * Card do "Os números de vocês" (wrapped). Auto = derivado da data do contador
+ * (NÃO guarda value; é sempre calculado no render). Manual = value/suffix/label.
+ * Sufixos não numéricos (ex.: "∞") são permitidos.
+ */
+export const statSchema = z.object({
+  auto: z.literal('days_since_counter').optional(),
+  value: z.number().optional(),
+  suffix: z.string().max(40).optional(),
+  label: z.string().max(120),
+});
+
 export const giftPayloadSchema = z
   .object({
     title: z.string().max(160).optional(),
@@ -21,6 +39,8 @@ export const giftPayloadSchema = z
     senderName: z.string().max(120).optional(),
     letter: z.string().max(8000).optional(),
     timeline: z.array(timelineItemSchema).max(50).optional(),
+    counter: counterSchema.optional(),
+    stats: z.array(statSchema).max(30).optional(),
     theme: z.string().max(60).optional(),
     spotifyTrackUrl: z.string().url().max(500).optional(),
   })

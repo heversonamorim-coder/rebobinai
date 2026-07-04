@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { CountdownTimecode } from '../../components/countdown-timecode';
 import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
 import {
@@ -17,11 +18,17 @@ import {
   OCCASIONS,
   assetUrl,
   clearDraftRef,
+  daysSince,
+  defaultCounterLabel,
   loadDraftRef,
   saveDraftRef,
+  statChipText,
+  statChipsFor,
   type DraftRef,
   type GiftAsset,
+  type GiftCounter,
   type GiftPayload,
+  type GiftStat,
   type TimelineItem,
 } from '../../lib/gift';
 
@@ -49,10 +56,18 @@ const SwapIcon = () => (
   </svg>
 );
 
-const STEPS = ['Ocasião', 'História', 'Fotos', 'Linha do tempo', 'Trilha', 'Finalizar'] as const;
+const STEPS = [
+  'Ocasião',
+  'História',
+  'Números',
+  'Fotos',
+  'Linha do tempo',
+  'Trilha',
+  'Finalizar',
+] as const;
 
 // A prévia (stories) acompanha o passo atual: cada passo foca o slide da seção.
-const STEP_FOCUS = ['cover', 'cover', 'photos', 'timeline', 'music', 'cover'] as const;
+const STEP_FOCUS = ['cover', 'cover', 'wrapped', 'photos', 'timeline', 'music', 'cover'] as const;
 
 // Limite de upload — precisa bater com o FileInterceptor da API (10MB).
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -70,6 +85,9 @@ export default function CriarPage() {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Se o usuário customizou o label do contador, a mudança de Ocasião não o
+  // sobrescreve mais.
+  const [counterLabelTouched, setCounterLabelTouched] = useState(false);
 
   // Retoma um rascunho existente (guest-first, sem login).
   useEffect(() => {
@@ -85,12 +103,27 @@ export default function CriarPage() {
         setOccasion(g.occasion ?? '');
         setPayload(g.payload ?? {});
         setAssets(g.assets ?? []);
+        // Rascunho com label salvo → trata como já customizado.
+        if (g.payload?.counter?.label) setCounterLabelTouched(true);
       })
       .catch(() => clearDraftRef());
   }, []);
 
+  // Label default do contador segue a Ocasião — enquanto o usuário não editar.
+  useEffect(() => {
+    if (counterLabelTouched) return;
+    setPayload((prev) => ({
+      ...prev,
+      counter: { ...prev.counter, label: defaultCounterLabel(occasion) },
+    }));
+  }, [occasion, counterLabelTouched]);
+
   function patch(p: Partial<GiftPayload>) {
     setPayload((prev) => ({ ...prev, ...p }));
+  }
+
+  function patchCounter(p: Partial<GiftCounter>) {
+    setPayload((prev) => ({ ...prev, counter: { ...prev.counter, ...p } }));
   }
 
   // Compositor de IA: aplica o rascunho gerado sobre o formulário e avança
@@ -266,6 +299,23 @@ export default function CriarPage() {
       )}
 
       {step === 2 && (
+        <Step
+          title="Os números de vocês"
+          hint="Um contador da data e alguns números marcantes — tudo opcional."
+        >
+          <NumbersEditor
+            occasion={occasion}
+            counter={payload.counter}
+            stats={payload.stats ?? []}
+            labelTouched={counterLabelTouched}
+            onCounter={patchCounter}
+            onLabelTouched={() => setCounterLabelTouched(true)}
+            onStats={(stats) => patch({ stats })}
+          />
+        </Step>
+      )}
+
+      {step === 3 && (
         <Step title="As fotos de vocês" hint="Elas dão vida à rebobinada. Arraste, ou suba do celular/computador.">
           <PhotoUploader
             assets={assets}
@@ -276,7 +326,7 @@ export default function CriarPage() {
         </Step>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <Step title="Linha do tempo" hint="Momentos marcantes — opcional, mas emociona.">
           <TimelineEditor
             items={payload.timeline ?? []}
@@ -287,7 +337,7 @@ export default function CriarPage() {
         </Step>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <Step title="A trilha sonora" hint="Cola o link da música de vocês (Spotify).">
           <Field
             label="Link da música (opcional)"
@@ -298,7 +348,7 @@ export default function CriarPage() {
         </Step>
       )}
 
-      {step === 5 && (
+      {step === 6 && (
         <Step title="Seu presente está pronto ◄◄" hint="Confira a prévia ao lado. O link e o QR liberam após o pagamento.">
           <LockedLink />
         </Step>
@@ -418,6 +468,209 @@ function Field({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
+    </div>
+  );
+}
+
+/** Step "Os números de vocês": contador (data + label) + wrapped (stats). */
+function NumbersEditor({
+  occasion,
+  counter,
+  stats,
+  labelTouched,
+  onCounter,
+  onLabelTouched,
+  onStats,
+}: {
+  occasion: string;
+  counter?: GiftCounter;
+  stats: GiftStat[];
+  labelTouched: boolean;
+  onCounter: (p: Partial<GiftCounter>) => void;
+  onLabelTouched: () => void;
+  onStats: (stats: GiftStat[]) => void;
+}) {
+  const targetDate = counter?.targetDate;
+  const label = counter?.label ?? '';
+
+  function setDate(date: string) {
+    onCounter({ targetDate: date || undefined });
+    const hasAuto = stats.some((s) => s.auto);
+    // A stat automática nasce com a data e some quando ela é limpa.
+    if (date && !hasAuto) {
+      onStats([{ auto: 'days_since_counter', label: 'de nós dois' }, ...stats]);
+    } else if (!date) {
+      onStats(stats.filter((s) => !s.auto));
+    }
+  }
+
+  function updateStat(i: number, p: Partial<GiftStat>) {
+    onStats(stats.map((s, idx) => (idx === i ? { ...s, ...p } : s)));
+  }
+  function removeStat(i: number) {
+    onStats(stats.filter((_, idx) => idx !== i));
+  }
+  function moveStat(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    const a = stats[i];
+    const b = stats[j];
+    if (!a || !b || a.auto || b.auto) return;
+    const arr = [...stats];
+    arr[i] = b;
+    arr[j] = a;
+    onStats(arr);
+  }
+  function addChip(chip: GiftStat) {
+    onStats([...stats, { ...chip }]);
+  }
+
+  const autoDays = daysSince(targetDate);
+  const chips = statChipsFor(occasion);
+
+  return (
+    <div className="space-y-8">
+      {/* Contador */}
+      <div>
+        <label className={labelClass} htmlFor="counter-date">
+          Quando essa história começou?
+        </label>
+        <input
+          id="counter-date"
+          type="date"
+          className={inputClass}
+          value={targetDate ?? ''}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+          opcional — dá pra pular
+        </p>
+
+        <div className="mt-4">
+          <label className={labelClass}>Rótulo do contador</label>
+          <input
+            className={inputClass}
+            value={label}
+            placeholder={defaultCounterLabel(occasion)}
+            onChange={(e) => {
+              onLabelTouched();
+              onCounter({ label: e.target.value });
+            }}
+          />
+          {!labelTouched && (
+            <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+              sugerido pela ocasião — edite à vontade
+            </p>
+          )}
+        </div>
+
+        {targetDate && (
+          <div className="mt-5 rounded-lg border border-[var(--line)] bg-tape/50 p-4">
+            <CountdownTimecode
+              targetDate={targetDate}
+              label={label || defaultCounterLabel(occasion)}
+              size="sm"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Wrapped */}
+      <div>
+        <p className="mb-3 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-cyan">
+          os números
+        </p>
+        <div className="space-y-3">
+          {stats.map((s, i) =>
+            s.auto ? (
+              <div key={`auto-${i}`} className="rounded-lg border border-cyan/40 bg-cyan/5 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-cyan">
+                    automático · {autoDays ?? '—'} dias
+                  </span>
+                </div>
+                <input
+                  className={inputClass}
+                  value={s.label}
+                  placeholder="Legenda (ex.: de nós dois)"
+                  onChange={(e) => updateStat(i, { label: e.target.value })}
+                />
+              </div>
+            ) : (
+              <div key={`stat-${i}`} className="rounded-lg border border-[var(--line)] bg-panel/50 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim">
+                    número {stats.slice(0, i + 1).filter((x) => !x.auto).length}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => moveStat(i, -1)}
+                      aria-label="Subir"
+                      className="font-mono text-xs text-dim hover:text-cyan"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveStat(i, 1)}
+                      aria-label="Descer"
+                      className="font-mono text-xs text-dim hover:text-cyan"
+                    >
+                      ▼
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeStat(i)}
+                      aria-label="Remover número"
+                      className="text-dim hover:text-magenta"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className={`${inputClass} w-24`}
+                    inputMode="numeric"
+                    value={s.value ?? ''}
+                    placeholder="nº"
+                    onChange={(e) => {
+                      const n = e.target.value.trim();
+                      updateStat(i, { value: n === '' ? undefined : Number(n) });
+                    }}
+                  />
+                  <input
+                    className={inputClass}
+                    value={s.suffix ?? ''}
+                    placeholder="unidade (ex.: viagens, ∞)"
+                    onChange={(e) => updateStat(i, { suffix: e.target.value })}
+                  />
+                </div>
+                <input
+                  className={`${inputClass} mt-2`}
+                  value={s.label}
+                  placeholder="Legenda (ex.: e contando)"
+                  onChange={(e) => updateStat(i, { label: e.target.value })}
+                />
+              </div>
+            ),
+          )}
+        </div>
+
+        {/* Chips de sugestão por ocasião */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {chips.map((chip) => (
+            <button
+              key={statChipText(chip)}
+              type="button"
+              onClick={() => addChip(chip)}
+              className="rounded-full border border-dashed border-[var(--line)] px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-dim hover:border-cyan hover:text-cyan"
+            >
+              + {statChipText(chip)}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
