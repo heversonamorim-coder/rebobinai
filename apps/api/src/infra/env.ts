@@ -34,6 +34,10 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default('claude-opus-4-8'),
 
+  // Admin de vendas (módulo admin — Tarefa 6). Token compartilhado entre o
+  // servidor do site (rota /admin) e a API. Sem ele, /admin fica desabilitado.
+  ADMIN_API_TOKEN: z.string().optional(),
+
   // Observabilidade
   SENTRY_DSN: z.string().optional(),
   POSTHOG_KEY: z.string().optional(),
