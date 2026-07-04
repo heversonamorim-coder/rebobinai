@@ -24,6 +24,8 @@ export interface StoriesViewerProps {
   watermark?: boolean;
   /** Prévia acompanha o passo atual do editor: pula pro slide correspondente. */
   focus?: SlideKind;
+  /** Ocupa a tela toda (página pública /p): full no celular, retrato no desktop. */
+  fullscreen?: boolean;
 }
 
 type Slide = { key: string; kind: SlideKind };
@@ -40,6 +42,7 @@ export function StoriesViewer({
   assets,
   watermark = false,
   focus,
+  fullscreen = false,
 }: StoriesViewerProps) {
   const photos = useMemo(
     () => (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a)).map((a) => ({ id: a.id, url: assetUrl(a) })),
@@ -115,11 +118,13 @@ export function StoriesViewer({
 
   const slide = slides[clamped];
 
+  // Tela cheia (/p): preenche o celular; no desktop vira um retrato centralizado.
+  const frameClass = fullscreen
+    ? 'rb-scanlines rb-vignette relative mx-auto flex h-svh w-full select-none flex-col overflow-hidden bg-tape-2 sm:h-[calc(100svh-3rem)] sm:max-h-[860px] sm:max-w-md sm:rounded-2xl sm:border sm:border-[var(--line)]'
+    : 'rb-scanlines rb-vignette relative mx-auto flex h-[70svh] max-h-[680px] w-full max-w-md select-none flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-tape-2';
+
   return (
-    <div
-      className="rb-scanlines rb-vignette relative mx-auto flex h-[70svh] max-h-[680px] w-full max-w-md select-none flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-tape-2"
-      onClick={onFrameClick}
-    >
+    <div className={frameClass} onClick={onFrameClick}>
       {/* Barra de progresso segmentada (um traço por slide) */}
       <div className="absolute inset-x-0 top-0 z-20 flex gap-1 px-3 pt-3">
         {slides.map((s, i) => (

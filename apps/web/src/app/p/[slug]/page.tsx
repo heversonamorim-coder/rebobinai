@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import QRCode from 'qrcode';
-import { CopyLink } from '../../../components/copy-link';
 import { StoriesViewer } from '../../../components/stories-viewer';
 import { getPublicGift } from '../../../lib/api';
 
@@ -50,64 +48,16 @@ export default async function GiftPublicPage({ params }: Params) {
   const gift = await getPublicGift(slug);
   if (!gift) notFound();
 
-  const url = `${await siteBaseUrl()}/p/${slug}`;
-  const whatsapp = `https://wa.me/?text=${encodeURIComponent(`${gift.payload.title ?? 'Um presente pra você'} ◄◄ ${url}`)}`;
-  const qr = await QRCode.toDataURL(url, {
-    margin: 1,
-    width: 320,
-    color: { dark: '#0A0713', light: '#F1ECFF' },
-  });
-
+  // Quem recebe o link vê só a rebobinada, em tela cheia — sem links nem QR.
   return (
-    <main className="mx-auto min-h-svh w-full max-w-2xl px-5 py-10 sm:py-16">
+    <main className="flex min-h-svh w-full items-stretch justify-center bg-tape sm:items-center sm:py-6">
       <StoriesViewer
         payload={gift.payload}
         occasion={gift.occasion}
         assets={gift.assets}
         watermark={gift.watermark}
+        fullscreen
       />
-
-      <section className="mt-8 flex flex-col items-center gap-6">
-        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim">
-          <span className="text-cyan">{gift.viewCount}</span>{' '}
-          {gift.viewCount === 1 ? 'abertura' : 'aberturas'}
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <a
-            href={whatsapp}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
-          >
-            compartilhar no whatsapp
-          </a>
-          <CopyLink url={url} />
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={qr}
-            alt={`QR code do presente ${slug}`}
-            width={160}
-            height={160}
-            className="rounded-lg border border-[var(--line)]"
-          />
-          <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/70">
-            aponte a câmera
-          </span>
-        </div>
-      </section>
-
-      <footer className="mt-12 text-center">
-        <a
-          href="/criar"
-          className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim underline underline-offset-4 hover:text-cyan"
-        >
-          <span className="rb-rew">◄◄</span> criar a minha rebobinada
-        </a>
-      </footer>
     </main>
   );
 }
