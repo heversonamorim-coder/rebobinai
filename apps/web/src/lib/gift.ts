@@ -30,6 +30,8 @@ export interface GiftPayload {
   timeline?: TimelineItem[];
   counter?: GiftCounter;
   stats?: GiftStat[];
+  /** Recado de fechamento — último slide antes do compartilhar (Tarefa 3). */
+  closingMessage?: string;
   theme?: string;
   spotifyTrackUrl?: string;
   [k: string]: unknown;

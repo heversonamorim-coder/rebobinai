@@ -1,5 +1,6 @@
 'use client';
 
+import QRCode from 'qrcode';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   assetUrl,
@@ -13,7 +14,7 @@ import { CountdownTimecode } from './countdown-timecode';
 import { Lightbox } from './lightbox';
 import { WrappedStats } from './wrapped-stats';
 
-type SlideKind = 'cover' | 'photos' | 'timeline' | 'wrapped' | 'music';
+type SlideKind = 'cover' | 'photos' | 'timeline' | 'wrapped' | 'music' | 'closing' | 'share';
 
 export interface StoriesViewerProps {
   payload: GiftPayload;
@@ -26,6 +27,11 @@ export interface StoriesViewerProps {
   focus?: SlideKind;
   /** Ocupa a tela toda (página pública /p): full no celular, retrato no desktop. */
   fullscreen?: boolean;
+  /**
+   * URL pública do presente. Quando presente (página do destinatário), habilita
+   * o último slide de compartilhar como story no Instagram (Tarefa 4).
+   */
+  shareUrl?: string;
 }
 
 type Slide = { key: string; kind: SlideKind };
@@ -43,6 +49,7 @@ export function StoriesViewer({
   watermark = false,
   focus,
   fullscreen = false,
+  shareUrl,
 }: StoriesViewerProps) {
   const photos = useMemo(
     () => (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a)).map((a) => ({ id: a.id, url: assetUrl(a) })),
@@ -57,6 +64,8 @@ export function StoriesViewer({
     stats.some((s) => !s.auto) ||
     (Boolean(payload.counter?.targetDate) && stats.some((s) => s.auto));
 
+  const closingMessage = payload.closingMessage?.trim();
+
   const slides = useMemo<Slide[]>(() => {
     // A história (título + recado) fica na própria capa — não vira slide à parte.
     const s: Slide[] = [{ key: 'cover', kind: 'cover' }];
@@ -65,8 +74,12 @@ export function StoriesViewer({
     // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
     if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
+    // Recado final (Tarefa 3) — fecho da rebobinada.
+    if (closingMessage) s.push({ key: 'closing', kind: 'closing' });
+    // Compartilhar como story (Tarefa 4) — só pra quem recebe (tem shareUrl).
+    if (shareUrl) s.push({ key: 'share', kind: 'share' });
     return s;
-  }, [payload.timeline, photos.length, hasWrapped, embed]);
+  }, [payload.timeline, photos.length, hasWrapped, embed, closingMessage, shareUrl]);
 
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -163,6 +176,16 @@ export function StoriesViewer({
           <WrappedStats stats={stats} targetDate={payload.counter?.targetDate} />
         )}
         {slide?.kind === 'music' && embed && <MusicSlide embedUrl={embed} />}
+        {slide?.kind === 'closing' && closingMessage && (
+          <ClosingSlide message={closingMessage} senderName={payload.senderName} />
+        )}
+        {slide?.kind === 'share' && shareUrl && (
+          <ShareSlide
+            shareUrl={shareUrl}
+            title={payload.title}
+            recipientName={payload.recipientName}
+          />
+        )}
       </div>
 
       {/* Setas de navegação — botões sempre clicáveis (funcionam até sobre o
@@ -361,4 +384,259 @@ function MusicSlide({ embedUrl }: { embedUrl: string }) {
       />
     </div>
   );
+}
+
+/** Slide de recado final (Tarefa 3) — o fecho da rebobinada. */
+function ClosingSlide({ message, senderName }: { message: string; senderName?: string }) {
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center text-center">
+      <p className="mb-6 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
+        pra fechar
+      </p>
+      <p className="rb-chroma max-w-prose whitespace-pre-wrap font-display text-2xl font-semibold leading-snug text-glow sm:text-3xl">
+        {message}
+      </p>
+      {senderName && (
+        <p className="mt-6 font-mono text-xs uppercase tracking-[0.25em] text-dim">— {senderName}</p>
+      )}
+      <p className="mt-8 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/60">◄◄</p>
+    </div>
+  );
+}
+
+/**
+ * Último slide (Tarefa 4) — só aparece pra quem recebe (tem shareUrl). Permite
+ * compartilhar a rebobinada como story no Instagram: usa a Web Share API
+ * (abre a folha nativa do celular → Instagram) e oferece baixar uma imagem
+ * 1080×1920 pronta pro story, com o QR do presente.
+ */
+function ShareSlide({
+  shareUrl,
+  title,
+  recipientName,
+}: {
+  shareUrl: string;
+  title?: string;
+  recipientName?: string;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  }, []);
+
+  async function share() {
+    const data = {
+      title: title || 'A nossa rebobinada ◄◄',
+      text: `${title || 'Olha a nossa história'} ◄◄`,
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) await navigator.share(data);
+      else await copy();
+    } catch {
+      /* usuário cancelou ou share indisponível — ignora */
+    }
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard indisponível */
+    }
+  }
+
+  async function downloadStoryImage() {
+    setBusy(true);
+    try {
+      const dataUrl = await buildStoryImage(shareUrl, title, recipientName);
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'rebobinai-story.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      /* falhou ao gerar — o botão de compartilhar segue disponível */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center text-center">
+      <p className="mb-3 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
+        gostou? compartilha ◄◄
+      </p>
+      <h2 className="rb-chroma font-display text-2xl font-bold leading-tight text-glow sm:text-3xl">
+        Poste no seu story
+      </h2>
+      <p className="mt-3 max-w-xs text-sm leading-relaxed text-glow/80">
+        Baixe a imagem pronta pro story do Instagram ou compartilhe o link com quem você ama.
+      </p>
+
+      <div className="mt-8 flex w-full max-w-xs flex-col gap-3">
+        <button
+          type="button"
+          data-interactive
+          onClick={downloadStoryImage}
+          disabled={busy}
+          className="w-full rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110 disabled:opacity-50"
+        >
+          {busy ? 'gerando imagem…' : '📸 baixar imagem pro story'}
+        </button>
+        {canShare && (
+          <button
+            type="button"
+            data-interactive
+            onClick={share}
+            className="w-full rounded-lg border border-cyan px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-cyan transition hover:bg-cyan hover:text-tape"
+          >
+            compartilhar link
+          </button>
+        )}
+        <button
+          type="button"
+          data-interactive
+          onClick={copy}
+          className="w-full rounded-lg border border-[var(--line)] px-6 py-3 font-mono text-xs uppercase tracking-[0.2em] text-dim transition hover:border-cyan hover:text-cyan"
+        >
+          {copied ? '✓ link copiado' : 'copiar link'}
+        </button>
+      </div>
+
+      <p className="mt-6 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/60">
+        ◄◄ rebobinaí
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Monta uma imagem 1080×1920 (formato story) no canvas: fundo da marca, título,
+ * QR do presente e chamada pra apontar a câmera. Sem libs extras — usa o
+ * `qrcode` já presente. Devolve um data URL PNG.
+ */
+async function buildStoryImage(
+  shareUrl: string,
+  title?: string,
+  recipientName?: string,
+): Promise<string> {
+  const W = 1080;
+  const H = 1920;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas indisponível');
+
+  // Fundo — degradê da marca (tape → magenta/roxo sutil).
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0A0713');
+  bg.addColorStop(0.55, '#150b26');
+  bg.addColorStop(1, '#1c1033');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Scanlines sutis.
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let y = 0; y < H; y += 6) ctx.fillRect(0, y, W, 2);
+
+  ctx.textAlign = 'center';
+
+  // Selo topo.
+  ctx.fillStyle = '#18E9FF';
+  ctx.font = '600 34px "Space Mono", monospace';
+  ctx.fillText('◄◄ REBOBINAÍ', W / 2, 220);
+
+  // Título (quebra em linhas).
+  ctx.fillStyle = '#F1ECFF';
+  const heading = title || 'A nossa história';
+  wrapText(ctx, heading, W / 2, 560, W - 200, 96, 'bold 84px "Chakra Petch", sans-serif');
+
+  // Subtítulo.
+  ctx.fillStyle = 'rgba(241,236,255,0.85)';
+  ctx.font = '400 40px "Space Grotesk", sans-serif';
+  ctx.fillText(
+    recipientName ? `feito com amor pra ${recipientName}` : 'aperta o play e se emociona',
+    W / 2,
+    900,
+  );
+
+  // QR num cartão claro.
+  const qrSize = 520;
+  const qrX = (W - qrSize) / 2;
+  const qrY = 1040;
+  const pad = 48;
+  roundRect(ctx, qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2, 40);
+  ctx.fillStyle = '#F1ECFF';
+  ctx.fill();
+  const qrCanvas = document.createElement('canvas');
+  await QRCode.toCanvas(qrCanvas, shareUrl, {
+    margin: 0,
+    width: qrSize,
+    color: { dark: '#0A0713', light: '#F1ECFF' },
+  });
+  ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+  // Chamada embaixo.
+  ctx.fillStyle = '#18E9FF';
+  ctx.font = '600 40px "Space Mono", monospace';
+  ctx.fillText('aponte a câmera pra ver', W / 2, qrY + qrSize + pad + 120);
+
+  ctx.fillStyle = 'rgba(241,236,255,0.55)';
+  ctx.font = '400 32px "Space Grotesk", sans-serif';
+  ctx.fillText('rebobinai.app', W / 2, H - 120);
+
+  return canvas.toDataURL('image/png');
+}
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  font: string,
+) {
+  ctx.font = font;
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  // Centraliza verticalmente o bloco em torno de y.
+  const startY = y - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((l, i) => ctx.fillText(l, x, startY + i * lineHeight));
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
