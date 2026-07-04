@@ -24,15 +24,22 @@ export interface GiftAsset {
   type: 'image' | 'audio';
   r2Key: string;
   order: number;
+  /** URL pública já montada pela API (fonte de verdade). */
+  url?: string;
 }
 
-// Base pública do R2 (Cloudflare) — defina NEXT_PUBLIC_R2_PUBLIC_BASE_URL no
-// Vercel com a mesma URL do R2_PUBLIC_BASE_URL da API.
+// Base pública do R2 (Cloudflare) — fallback opcional. A API já devolve a URL
+// pronta em cada asset; este env só é usado se `asset.url` vier vazio.
 const R2_BASE = (process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL ?? '').replace(/\/+$/, '');
 
-/** URL pública da imagem a partir do r2Key. Vazia se a base não estiver setada. */
-export function assetUrl(r2Key: string): string {
-  return R2_BASE ? `${R2_BASE}/${r2Key}` : '';
+/**
+ * URL pública da imagem. Prefere a `url` que a API já montou (a partir do
+ * R2_PUBLIC_BASE_URL do back); só cai no env do front se ela vier vazia.
+ * Vazia se nenhuma base estiver configurada.
+ */
+export function assetUrl(asset: Pick<GiftAsset, 'r2Key' | 'url'>): string {
+  if (asset.url) return asset.url;
+  return R2_BASE ? `${R2_BASE}/${asset.r2Key}` : '';
 }
 
 export interface Gift {

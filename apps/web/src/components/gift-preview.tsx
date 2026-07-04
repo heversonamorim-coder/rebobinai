@@ -18,7 +18,7 @@ export interface GiftPreviewProps {
 export function GiftPreview({ payload, occasion, assets, watermark = false }: GiftPreviewProps) {
   const { title, recipientName, senderName, letter, timeline, spotifyTrackUrl } = payload;
   const occ = occasionLabel(occasion);
-  const photos = (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a.r2Key));
+  const photos = (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a));
 
   return (
     <div className="rb-scanlines rb-vignette relative overflow-hidden rounded-2xl border border-[var(--line)] bg-tape-2 px-6 py-10 sm:px-10 sm:py-14">
@@ -50,7 +50,7 @@ export function GiftPreview({ payload, occasion, assets, watermark = false }: Gi
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               key={a.id}
-              src={assetUrl(a.r2Key)}
+              src={assetUrl(a)}
               alt=""
               className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
             />

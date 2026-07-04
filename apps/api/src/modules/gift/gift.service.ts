@@ -17,18 +17,19 @@ export class GiftService {
     private readonly media: MediaService,
   ) {}
 
-  createDraft(dto: CreateGiftDto) {
-    return this.repo.create({
+  async createDraft(dto: CreateGiftDto) {
+    const gift = await this.repo.create({
       occasion: dto.occasion,
       payload: (dto.payload ?? {}) as Prisma.InputJsonValue,
     });
+    return this.withAssetUrls(gift);
   }
 
   async getForEdit(id: string, editToken: string) {
     const gift = await this.repo.findById(id);
     if (!gift) throw new NotFoundException('Presente não encontrado');
     this.assertEditor(gift.editToken, editToken);
-    return gift;
+    return this.withAssetUrls(gift);
   }
 
   /**
@@ -42,26 +43,28 @@ export class GiftService {
       throw new NotFoundException('Presente não encontrado');
     }
     const updated = await this.repo.incrementViews(slug);
-    const { editToken: _omit, ...pub } = updated;
+    const { editToken: _omit, ...pub } = this.withAssetUrls(updated);
     return pub;
   }
 
   async update(id: string, editToken: string, dto: UpdateGiftDto) {
-    const gift = await this.mustEdit(id, editToken);
-    return this.repo.update(id, {
+    await this.mustEdit(id, editToken);
+    const gift = await this.repo.update(id, {
       occasion: dto.occasion ?? undefined,
       payload: dto.payload ? (dto.payload as Prisma.InputJsonValue) : undefined,
     });
+    return this.withAssetUrls(gift);
   }
 
   async addAsset(id: string, editToken: string, dto: AddAssetDto) {
     await this.mustEdit(id, editToken);
-    return this.repo.addAsset({
+    const asset = await this.repo.addAsset({
       giftId: id,
       type: dto.type,
       r2Key: dto.r2Key,
       order: dto.order ?? 0,
     });
+    return this.serializeAsset(asset);
   }
 
   async removeAsset(id: string, editToken: string, assetId: string) {
@@ -75,12 +78,13 @@ export class GiftService {
   async uploadImageAsset(id: string, editToken: string, buffer: Buffer) {
     const gift = await this.mustEdit(id, editToken);
     const { r2Key } = await this.media.uploadImage(buffer);
-    return this.repo.addAsset({
+    const asset = await this.repo.addAsset({
       giftId: id,
       type: 'image',
       r2Key,
       order: gift.assets.length,
     });
+    return this.serializeAsset(asset);
   }
 
   /**
@@ -104,6 +108,19 @@ export class GiftService {
     }
     // inatingível — o loop acima retorna ou relança
     throw new Error('Não foi possível gerar um slug único para o presente.');
+  }
+
+  /**
+   * Serializa a URL pública em cada asset a partir do r2Key (fonte única de
+   * verdade no back). Assim o front exibe a imagem sem precisar de uma cópia da
+   * base pública do R2 — some o footgun de `<img src="">` por env faltando.
+   */
+  private withAssetUrls<T extends { assets: { r2Key: string }[] }>(gift: T) {
+    return { ...gift, assets: gift.assets.map((a) => this.serializeAsset(a)) };
+  }
+
+  private serializeAsset<A extends { r2Key: string }>(asset: A) {
+    return { ...asset, url: this.media.publicUrl(asset.r2Key) };
   }
 
   /** Carrega o presente, valida o editor e garante que ainda é um rascunho. */

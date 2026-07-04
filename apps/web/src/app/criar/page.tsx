@@ -451,7 +451,7 @@ function PhotoUploader({
             <div key={a.id} className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={assetUrl(a.r2Key)}
+                src={assetUrl(a)}
                 alt=""
                 className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
               />
