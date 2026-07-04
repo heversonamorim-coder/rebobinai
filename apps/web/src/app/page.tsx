@@ -54,16 +54,20 @@ export default async function Home() {
     <main className="overflow-hidden">
       <SiteHeader />
 
-      {/* Hero (carrossel) */}
-      <section className="rb-scanlines relative flex min-h-svh flex-col items-center justify-center px-5 text-center">
-        <Osd left="● REC" right="SP · 0:00:31" />
+      {/* Hero (carrossel com foto de fundo nos slides 2 e 3) */}
+      <section className="rb-scanlines relative min-h-svh overflow-hidden">
         <HeroCarousel />
+
+        {/* OSD acima dos slides (inclusive sobre as fotos) */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
+          <Osd left="● REC" right="SP · 0:00:31" />
+        </div>
 
         {/* Indicador de que tem mais conteúdo pra baixo */}
         <a
           href="#como-funciona"
           aria-label="Rolar para baixo"
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.3em] text-dim transition hover:text-cyan"
+          className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.3em] text-dim transition hover:text-cyan"
         >
           role pra ver mais
           <span className="animate-bounce text-lg leading-none">▼</span>

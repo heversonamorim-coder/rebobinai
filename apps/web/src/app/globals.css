@@ -42,6 +42,48 @@ label:has(> input[type='file']) {
   animation: rb-fade-in 0.5s ease both;
 }
 
+/* ── "Filtro Rebobinaí" nas imagens do hero ─────────────────────────────────
+   Fotos cruas → estética VHS: duotone magenta/ciano, grain, scanlines, leve
+   aberração cromática nas bordas e gradiente escuro no lado do texto. */
+
+/* Grain animado sutil (ruído via SVG) */
+.rb-hero-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.1;
+}
+
+/* Aberração cromática nas bordas (fringe magenta/ciano) */
+.rb-hero-aberration {
+  box-shadow:
+    inset 5px 0 16px -8px var(--magenta),
+    inset -5px 0 16px -8px var(--cyan),
+    inset 0 6px 18px -10px var(--magenta),
+    inset 0 -6px 18px -10px var(--cyan);
+}
+
+/* Gradiente escuro do lado do texto (desktop cobre ~60%, mobile ~2/3) */
+.rb-hero-fade {
+  background: linear-gradient(
+    90deg,
+    #0a0713 0%,
+    rgba(10, 7, 19, 0.92) 38%,
+    rgba(10, 7, 19, 0.55) 60%,
+    transparent 82%
+  );
+}
+@media (max-width: 640px) {
+  .rb-hero-fade {
+    background: linear-gradient(
+      90deg,
+      #0a0713 0%,
+      rgba(10, 7, 19, 0.92) 50%,
+      rgba(10, 7, 19, 0.6) 72%,
+      transparent 94%
+    );
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rb-fade-in {
     animation: none;
