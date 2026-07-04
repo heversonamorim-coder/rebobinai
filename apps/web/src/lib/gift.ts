@@ -26,6 +26,15 @@ export interface GiftAsset {
   order: number;
 }
 
+// Base pública do R2 (Cloudflare) — defina NEXT_PUBLIC_R2_PUBLIC_BASE_URL no
+// Vercel com a mesma URL do R2_PUBLIC_BASE_URL da API.
+const R2_BASE = (process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL ?? '').replace(/\/+$/, '');
+
+/** URL pública da imagem a partir do r2Key. Vazia se a base não estiver setada. */
+export function assetUrl(r2Key: string): string {
+  return R2_BASE ? `${R2_BASE}/${r2Key}` : '';
+}
+
 export interface Gift {
   id: string;
   slug: string | null;

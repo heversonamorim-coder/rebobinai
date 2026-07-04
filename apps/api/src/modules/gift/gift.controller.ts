@@ -1,4 +1,18 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ZodValidationPipe } from '../../infra/zod-validation.pipe';
 import {
   AddAssetDto,
@@ -44,6 +58,20 @@ export class GiftController {
     @Body(new ZodValidationPipe(addAssetSchema)) dto: AddAssetDto,
   ) {
     return this.gifts.addAsset(id, editToken, dto);
+  }
+
+  @Post(':id/assets/upload')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  uploadImage(
+    @Param('id') id: string,
+    @Headers('x-edit-token') editToken: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('Arquivo ausente');
+    if (!file.mimetype?.startsWith('image/')) {
+      throw new BadRequestException('Envie um arquivo de imagem');
+    }
+    return this.gifts.uploadImageAsset(id, editToken, file.buffer);
   }
 
   @Delete(':id/assets/:assetId')

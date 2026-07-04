@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MediaModule } from '../media/media.module';
 import { GiftController } from './gift.controller';
 import { GiftRepository } from './gift.repository';
 import { GiftService } from './gift.service';
@@ -12,6 +13,7 @@ import { PublicGiftController } from './public-gift.controller';
  * fica encapsulado no GiftRepository.
  */
 @Module({
+  imports: [MediaModule],
   controllers: [GiftController, PublicGiftController],
   providers: [GiftService, GiftRepository],
   exports: [GiftService],

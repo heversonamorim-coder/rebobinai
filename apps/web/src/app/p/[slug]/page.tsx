@@ -46,7 +46,12 @@ export default async function GiftPublicPage({ params }: Params) {
 
   return (
     <main className="mx-auto min-h-svh w-full max-w-2xl px-5 py-10 sm:py-16">
-      <GiftPreview payload={gift.payload} occasion={gift.occasion} watermark={gift.watermark} />
+      <GiftPreview
+        payload={gift.payload}
+        occasion={gift.occasion}
+        assets={gift.assets}
+        watermark={gift.watermark}
+      />
 
       <section className="mt-8 flex flex-col items-center gap-6">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim">

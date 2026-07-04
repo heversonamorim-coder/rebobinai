@@ -1,9 +1,11 @@
 import { Osd } from '@rebobinai/ui';
-import { occasionLabel, type GiftPayload } from '../lib/gift';
+import { assetUrl, occasionLabel, type GiftAsset, type GiftPayload } from '../lib/gift';
 
 export interface GiftPreviewProps {
   payload: GiftPayload;
   occasion?: string | null;
+  /** Fotos do presente (F3-3). */
+  assets?: GiftAsset[];
   /** Quando true, sobrepõe a marca d'água (rascunho não pago). */
   watermark?: boolean;
 }
@@ -13,9 +15,10 @@ export interface GiftPreviewProps {
  * Componente presentacional puro — sem hooks — para ser usado tanto no editor
  * (preview do rascunho) quanto no SSR de /p/:slug (F1-3).
  */
-export function GiftPreview({ payload, occasion, watermark = false }: GiftPreviewProps) {
+export function GiftPreview({ payload, occasion, assets, watermark = false }: GiftPreviewProps) {
   const { title, recipientName, senderName, letter, timeline, spotifyTrackUrl } = payload;
   const occ = occasionLabel(occasion);
+  const photos = (assets ?? []).filter((a) => a.type === 'image' && assetUrl(a.r2Key));
 
   return (
     <div className="rb-scanlines rb-vignette relative overflow-hidden rounded-2xl border border-[var(--line)] bg-tape-2 px-6 py-10 sm:px-10 sm:py-14">
@@ -40,6 +43,20 @@ export function GiftPreview({ payload, occasion, watermark = false }: GiftPrevie
       )}
 
       <div className="rb-tracking-bar mx-auto mt-8 max-w-md" aria-hidden />
+
+      {photos.length > 0 && (
+        <div className="mx-auto mt-8 grid max-w-md grid-cols-2 gap-2 sm:grid-cols-3">
+          {photos.map((a) => (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              key={a.id}
+              src={assetUrl(a.r2Key)}
+              alt=""
+              className="aspect-square w-full rounded-lg border border-[var(--line)] object-cover"
+            />
+          ))}
+        </div>
+      )}
 
       {letter && (
         <p className="mx-auto mt-8 max-w-prose whitespace-pre-wrap text-center text-lg leading-relaxed text-glow/90">
