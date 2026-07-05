@@ -19,11 +19,13 @@ Devolva SOMENTE um objeto JSON válido (sem markdown, sem texto antes ou depois)
 - "occasion": uma destas chaves ou null: ${OCCASIONS.join(', ')}.
 - "recipientName": nome de quem recebe, ou null se não souber.
 - "senderName": nome de quem envia, ou null.
-- "letter": um recado caloroso e pessoal (2 a 5 frases), na voz de quem envia, em português do Brasil.
+- "letter": um recado curto de capa (1 a 2 frases, até ~160 caracteres), na voz de quem envia, em português do Brasil.
+- "startDate": a data em que a história começou no formato "AAAA-MM-DD", SOMENTE se a pessoa citar (ex.: "desde março de 2019" → "2019-03-01"). Se não der pra saber, null.
+- "closingMessage": um rascunho de recado final curto e emocionante (1 a 2 frases) pra fechar o presente. Sempre preencha.
 - "timeline": de 3 a 5 momentos marcantes, cada um { "date": texto curto ou null, "title": frase curta, "description": 1 frase ou null }, em ordem cronológica.
 
 Regras:
-- Use só o que a pessoa contou; quando faltar um dado, infira com bom senso ou use null — não invente nomes reais.
+- Use só o que a pessoa contou; quando faltar um dado, infira com bom senso ou use null — não invente nomes reais nem datas que a pessoa não mencionou.
 - Tom emotivo, leve e verdadeiro. Nada brega demais.
 - Recuse (retorne todos os campos vazios/null e timeline []) qualquer conteúdo impróprio: envolvendo menores de forma sexual, ódio, violência explícita ou ilegal.
 - Não inclua nenhuma explicação: a resposta é apenas o JSON.`;
@@ -60,7 +62,14 @@ export class AiService {
       throw new UnprocessableEntityException('Não consegui montar o rascunho a partir do texto.');
     }
 
-    const { occasion, ...payload } = draft;
+    // Mapeia os campos "planos" da IA pro formato do payload: startDate vira o
+    // contador (counter.targetDate); closingMessage segue como está.
+    const { occasion, startDate, closingMessage, ...rest } = draft;
+    const payload = {
+      ...rest,
+      ...(startDate ? { counter: { targetDate: startDate } } : {}),
+      ...(closingMessage ? { closingMessage } : {}),
+    };
     return { occasion, payload };
   }
 

@@ -208,6 +208,8 @@ interface AiDraftResponse {
     recipientName: string | null;
     senderName: string | null;
     letter: string;
+    counter?: { targetDate?: string | null } | null;
+    closingMessage?: string | null;
     timeline: { date: string | null; title: string; description: string | null }[];
   };
 }
@@ -230,6 +232,8 @@ export async function draftFromText(text: string): Promise<DraftResult> {
       recipientName: p.recipientName ?? undefined,
       senderName: p.senderName ?? undefined,
       letter: p.letter,
+      ...(p.counter?.targetDate ? { counter: { targetDate: p.counter.targetDate } } : {}),
+      ...(p.closingMessage ? { closingMessage: p.closingMessage } : {}),
       timeline: (p.timeline ?? []).map((t) => ({
         date: t.date ?? undefined,
         title: t.title,
