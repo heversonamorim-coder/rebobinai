@@ -21,6 +21,7 @@ import { formatBRL, PLANS_FALLBACK, priceDisplay, type Plan } from '../../lib/pl
 import {
   emptyShipping,
   PHYSICAL_PRODUCTS,
+  physicalFromPrice,
   type FreightQuote,
   type ProductKey,
   type Shipping,
@@ -251,7 +252,11 @@ export default function PagarPage() {
               {plans
                 .filter((p) => p.key !== 'free')
                 .map((p) => {
-                  const price = priceDisplay(p);
+                  // Plano físico mostra "a partir de" o produto mais barato.
+                  const priceLabel =
+                    p.key === 'quadro'
+                      ? `a partir de ${formatBRL(physicalFromPrice())}`
+                      : priceDisplay(p).current;
                   const active = p.key === planKey;
                   return (
                     <button
@@ -266,7 +271,7 @@ export default function PagarPage() {
                         <span className="font-display text-glow">{p.name}</span>
                         {p.tagline && <span className="ml-2 text-xs text-dim">{p.tagline}</span>}
                       </span>
-                      <span className="font-display text-cyan">{price.current}</span>
+                      <span className="shrink-0 font-display text-cyan">{priceLabel}</span>
                     </button>
                   );
                 })}
