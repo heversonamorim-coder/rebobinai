@@ -32,6 +32,8 @@ export interface GiftPayload {
   stats?: GiftStat[];
   /** Recado de fechamento — último slide antes do compartilhar (Tarefa 3). */
   closingMessage?: string;
+  /** Foto opcional do slide de recado final (id de um GiftAsset). */
+  closingPhotoAssetId?: string;
   theme?: string;
   spotifyTrackUrl?: string;
   [k: string]: unknown;
