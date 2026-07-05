@@ -14,6 +14,10 @@ export const aiDraftSchema = z.object({
   recipientName: z.string().nullable(),
   senderName: z.string().nullable(),
   letter: z.string(),
+  // Data de início da história (contador), AAAA-MM-DD, só quando a pessoa citar.
+  startDate: z.string().nullish(),
+  // Rascunho do recado de fechamento (último slide).
+  closingMessage: z.string().nullish(),
   timeline: z
     .array(
       z.object({
