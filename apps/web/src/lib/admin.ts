@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import type { AdminOrder } from './admin-types';
+import type { AdminGift, AdminOrder } from './admin-types';
 
 /**
  * Helpers de servidor do admin (Tarefa 6). O navegador nunca vê as credenciais
@@ -45,13 +45,25 @@ export async function isAdmin(): Promise<boolean> {
 /** Lista de pedidos (server-side, autenticada por token). */
 export async function fetchAdminOrders(): Promise<AdminOrder[]> {
   const token = sessionSecret();
-  if (!token) return [];
+  if (!token) throw new Error('ADMIN_API_TOKEN não configurado no site.');
   const res = await fetch(`${apiBase()}/admin/orders`, {
     headers: { 'x-admin-token': token },
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error(`Falha ao listar pedidos (${res.status})`);
+  if (!res.ok) throw new Error(`Falha ao listar pedidos na API (${res.status}) — confira API_URL e ADMIN_API_TOKEN.`);
   return res.json() as Promise<AdminOrder[]>;
+}
+
+/** Lista de rebobinadas (gifts) criadas (server-side, autenticada por token). */
+export async function fetchAdminGifts(): Promise<AdminGift[]> {
+  const token = sessionSecret();
+  if (!token) throw new Error('ADMIN_API_TOKEN não configurado no site.');
+  const res = await fetch(`${apiBase()}/admin/gifts`, {
+    headers: { 'x-admin-token': token },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Falha ao listar rebobinadas na API (${res.status}) — confira API_URL e ADMIN_API_TOKEN.`);
+  return res.json() as Promise<AdminGift[]>;
 }
 
 /** Grava o código de rastreio de um pedido (server-side). */

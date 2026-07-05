@@ -18,6 +18,11 @@ export class AdminController {
     return this.admin.listOrders();
   }
 
+  @Get('gifts')
+  gifts() {
+    return this.admin.listGifts();
+  }
+
   @Patch('orders/:id/tracking')
   setTracking(
     @Param('id') id: string,

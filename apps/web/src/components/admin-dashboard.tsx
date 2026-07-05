@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import type { AdminOrder } from '../lib/admin-types';
+import type { AdminGift, AdminOrder } from '../lib/admin-types';
 import { formatBRL } from '../lib/plans';
 
 const STATUS_LABEL: Record<AdminOrder['status'], string> = {
@@ -31,9 +31,18 @@ function fmtDate(iso: string | null): string {
   });
 }
 
-export function AdminDashboard({ orders: initial }: { orders: AdminOrder[] }) {
+export function AdminDashboard({
+  orders: initial,
+  gifts = [],
+  error = null,
+}: {
+  orders: AdminOrder[];
+  gifts?: AdminGift[];
+  error?: string | null;
+}) {
   const router = useRouter();
   const [orders, setOrders] = useState(initial);
+  const [tab, setTab] = useState<'vendas' | 'rebobinadas'>('vendas');
 
   const stats = useMemo(() => {
     const paid = orders.filter((o) => o.status === 'paid');
@@ -60,7 +69,7 @@ export function AdminDashboard({ orders: initial }: { orders: AdminOrder[] }) {
           <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-dim">
             <span className="rb-rew">◄◄</span> Rebobinaí · admin
           </p>
-          <h1 className="mt-2 font-display text-2xl font-bold text-glow">Painel de vendas</h1>
+          <h1 className="mt-2 font-display text-2xl font-bold text-glow">Painel</h1>
         </div>
         <button
           type="button"
@@ -71,25 +80,105 @@ export function AdminDashboard({ orders: initial }: { orders: AdminOrder[] }) {
         </button>
       </header>
 
-      <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="pedidos" value={String(stats.total)} />
-        <StatCard label="pagos" value={String(stats.paid)} accent />
-        <StatCard label="a enviar" value={String(stats.toShip)} warn={stats.toShip > 0} />
-        <StatCard label="receita" value={formatBRL(stats.revenue)} accent />
-      </section>
-
-      {orders.length === 0 ? (
-        <p className="rounded-lg border border-[var(--line)] bg-panel/40 px-4 py-8 text-center text-dim">
-          Nenhum pedido ainda.
+      {error && (
+        <p className="mb-6 rounded-lg border border-magenta/50 bg-magenta/10 px-4 py-3 text-sm text-glow">
+          ⚠ {error}
         </p>
+      )}
+
+      {/* Abas: vendas (pedidos) e rebobinadas (todas as criadas) */}
+      <div className="mb-6 flex gap-2">
+        {(['vendas', 'rebobinadas'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] ${
+              tab === t ? 'border-cyan text-cyan' : 'border-[var(--line)] text-dim hover:text-glow'
+            }`}
+          >
+            {t === 'vendas' ? `vendas · ${orders.length}` : `rebobinadas · ${gifts.length}`}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'vendas' ? (
+        <>
+          <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="pedidos" value={String(stats.total)} />
+            <StatCard label="pagos" value={String(stats.paid)} accent />
+            <StatCard label="a enviar" value={String(stats.toShip)} warn={stats.toShip > 0} />
+            <StatCard label="receita" value={formatBRL(stats.revenue)} accent />
+          </section>
+
+          {orders.length === 0 ? (
+            <p className="rounded-lg border border-[var(--line)] bg-panel/40 px-4 py-8 text-center text-dim">
+              Nenhuma venda ainda.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((o) => (
+                <OrderCard key={o.id} order={o} onTracked={onTracked} />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="space-y-4">
-          {orders.map((o) => (
-            <OrderCard key={o.id} order={o} onTracked={onTracked} />
-          ))}
-        </div>
+        <GiftsList gifts={gifts} />
       )}
     </main>
+  );
+}
+
+const GIFT_STATUS: Record<AdminGift['status'], { label: string; color: string }> = {
+  draft: { label: 'rascunho', color: 'text-dim' },
+  paid: { label: 'pago', color: 'text-cyan' },
+  archived: { label: 'arquivado', color: 'text-dim' },
+};
+
+function GiftsList({ gifts }: { gifts: AdminGift[] }) {
+  if (gifts.length === 0) {
+    return (
+      <p className="rounded-lg border border-[var(--line)] bg-panel/40 px-4 py-8 text-center text-dim">
+        Nenhuma rebobinada criada ainda.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {gifts.map((g) => {
+        const s = GIFT_STATUS[g.status];
+        return (
+          <div key={g.id} className="rounded-xl border border-[var(--line)] bg-panel/40 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-display text-glow">{g.title || 'Rebobinada sem título'}</span>
+              <span className={`font-mono text-[0.65rem] uppercase tracking-[0.2em] ${s.color}`}>
+                {s.label}
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-dim">
+              {(g.recipientName || g.senderName) && (
+                <span className="normal-case tracking-normal">
+                  {g.senderName ? `de ${g.senderName}` : ''}
+                  {g.senderName && g.recipientName ? ' · ' : ''}
+                  {g.recipientName ? `pra ${g.recipientName}` : ''}
+                </span>
+              )}
+              {g.occasion && <span>{g.occasion}</span>}
+              <span>
+                <span className="text-cyan">{g.viewCount}</span> {g.viewCount === 1 ? 'abertura' : 'aberturas'}
+              </span>
+              <span>{new Date(g.createdAt).toLocaleDateString('pt-BR')}</span>
+              {g.status === 'paid' && g.slug && (
+                <a href={`/p/${g.slug}`} target="_blank" rel="noreferrer" className="text-cyan hover:underline">
+                  abrir ►
+                </a>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
