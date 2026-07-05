@@ -98,6 +98,14 @@ export default function CriarPage() {
   // Se o usuário customizou o label do contador, a mudança de Ocasião não o
   // sobrescreve mais.
   const [counterLabelTouched, setCounterLabelTouched] = useState(false);
+  // Foco de campo pode levar a prévia a um slide específico (ex.: no passo dos
+  // números, o contador foca a capa e os cards focam o wrapped).
+  const [focusOverride, setFocusOverride] = useState<'cover' | 'wrapped' | null>(null);
+
+  // Ao trocar de passo, o override de foco por campo é zerado.
+  useEffect(() => {
+    setFocusOverride(null);
+  }, [step]);
 
   // Retoma um rascunho existente (guest-first, sem login).
   useEffect(() => {
@@ -222,6 +230,17 @@ export default function CriarPage() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  // Navegação direta por clique nos passos (barra/label). Ao pular pro passo
+  // final, garante o rascunho salvo — igual ao fluxo do "finalizar".
+  async function jumpTo(target: number) {
+    if (target === step) return;
+    if (target === STEPS.length - 1) {
+      const saved = await saveDraft();
+      if (!saved) return;
+    }
+    setStep(target);
+  }
+
   return (
     <main className="mx-auto min-h-svh w-full max-w-5xl px-5 py-10 sm:py-16">
       <header className="mb-8">
@@ -231,7 +250,7 @@ export default function CriarPage() {
           </Link>{' '}
           · criar presente
         </p>
-        <ProgressBar step={step} />
+        <ProgressBar step={step} onJump={jumpTo} disabled={saving} />
       </header>
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
@@ -333,6 +352,7 @@ export default function CriarPage() {
             onCounter={patchCounter}
             onLabelTouched={() => setCounterLabelTouched(true)}
             onStats={(stats) => patch({ stats })}
+            onFocusSlide={setFocusOverride}
           />
         </Step>
       )}
@@ -442,7 +462,7 @@ export default function CriarPage() {
             occasion={occasion}
             assets={assets}
             watermark
-            focus={STEP_FOCUS[step]}
+            focus={focusOverride ?? STEP_FOCUS[step]}
           />
           <p className="mt-3 text-center font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/70">
             toque nas laterais pra navegar
@@ -453,23 +473,41 @@ export default function CriarPage() {
   );
 }
 
-function ProgressBar({ step }: { step: number }) {
+function ProgressBar({
+  step,
+  onJump,
+  disabled,
+}: {
+  step: number;
+  onJump: (i: number) => void;
+  disabled?: boolean;
+}) {
   return (
     <div className="mt-4 flex items-center gap-2">
       {STEPS.map((label, i) => (
-        <div key={label} className="flex-1">
+        <button
+          key={label}
+          type="button"
+          onClick={() => onJump(i)}
+          disabled={disabled}
+          aria-current={i === step}
+          aria-label={`Ir para o passo ${label}`}
+          className="group flex-1 text-left disabled:opacity-50"
+        >
           <div
-            className={`h-1.5 rounded-full ${i <= step ? 'bg-cyan' : 'bg-[var(--line)]'}`}
+            className={`h-1.5 rounded-full transition-colors ${
+              i <= step ? 'bg-cyan' : 'bg-[var(--line)] group-hover:bg-cyan/40'
+            }`}
             aria-hidden
           />
           <span
-            className={`mt-2 block font-mono text-[0.6rem] uppercase tracking-[0.15em] ${
-              i === step ? 'text-cyan' : 'text-dim/60'
+            className={`mt-2 block font-mono text-[0.6rem] uppercase tracking-[0.15em] transition-colors ${
+              i === step ? 'text-cyan' : 'text-dim/60 group-hover:text-cyan'
             }`}
           >
             {label}
           </span>
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -526,6 +564,7 @@ function NumbersEditor({
   onCounter,
   onLabelTouched,
   onStats,
+  onFocusSlide,
 }: {
   occasion: string;
   counter?: GiftCounter;
@@ -534,6 +573,8 @@ function NumbersEditor({
   onCounter: (p: Partial<GiftCounter>) => void;
   onLabelTouched: () => void;
   onStats: (stats: GiftStat[]) => void;
+  /** Foca a prévia: contador → capa; números → wrapped. */
+  onFocusSlide: (k: 'cover' | 'wrapped') => void;
 }) {
   const targetDate = counter?.targetDate;
   const label = counter?.label ?? '';
@@ -584,6 +625,7 @@ function NumbersEditor({
           type="date"
           className={inputClass}
           value={targetDate ?? ''}
+          onFocus={() => onFocusSlide('cover')}
           onChange={(e) => setDate(e.target.value)}
         />
         <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
@@ -596,6 +638,7 @@ function NumbersEditor({
             className={inputClass}
             value={label}
             placeholder={defaultCounterLabel(occasion)}
+            onFocus={() => onFocusSlide('cover')}
             onChange={(e) => {
               onLabelTouched();
               onCounter({ label: e.target.value });
@@ -621,8 +664,11 @@ function NumbersEditor({
 
       {/* Wrapped */}
       <div>
-        <p className="mb-3 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-cyan">
-          os números
+        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-cyan">
+          os números <span className="text-dim">· o wrapped de vocês</span>
+        </p>
+        <p className="mb-3 mt-1 text-xs text-dim">
+          Viram o slide “Os números de vocês”, com contagem animada.
         </p>
         <div className="space-y-3">
           {stats.map((s, i) =>
@@ -637,6 +683,7 @@ function NumbersEditor({
                   className={inputClass}
                   value={s.label}
                   placeholder="Legenda (ex.: de nós dois)"
+                  onFocus={() => onFocusSlide('wrapped')}
                   onChange={(e) => updateStat(i, { label: e.target.value })}
                 />
               </div>
@@ -679,6 +726,7 @@ function NumbersEditor({
                     inputMode="numeric"
                     value={s.value ?? ''}
                     placeholder="nº"
+                    onFocus={() => onFocusSlide('wrapped')}
                     onChange={(e) => {
                       const n = e.target.value.trim();
                       updateStat(i, { value: n === '' ? undefined : Number(n) });
@@ -688,6 +736,7 @@ function NumbersEditor({
                     className={inputClass}
                     value={s.suffix ?? ''}
                     placeholder="unidade (ex.: viagens, ∞)"
+                    onFocus={() => onFocusSlide('wrapped')}
                     onChange={(e) => updateStat(i, { suffix: e.target.value })}
                   />
                 </div>
@@ -695,6 +744,7 @@ function NumbersEditor({
                   className={`${inputClass} mt-2`}
                   value={s.label}
                   placeholder="Legenda (ex.: e contando)"
+                  onFocus={() => onFocusSlide('wrapped')}
                   onChange={(e) => updateStat(i, { label: e.target.value })}
                 />
               </div>
@@ -702,8 +752,18 @@ function NumbersEditor({
           )}
         </div>
 
-        {/* Chips de sugestão por ocasião */}
+        {/* Adicionar número: um genérico (em branco) + sugestões por ocasião */}
         <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              addChip({ label: '', suffix: '' });
+              onFocusSlide('wrapped');
+            }}
+            className="rounded-full border border-cyan/60 bg-cyan/5 px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-cyan hover:bg-cyan/15"
+          >
+            + Números
+          </button>
           {chips.map((chip) => (
             <button
               key={statChipText(chip)}
@@ -740,6 +800,17 @@ function TimelineEditor({
   function remove(i: number) {
     onChange(items.filter((_, idx) => idx !== i));
   }
+  // Reordena os momentos (mesmo padrão do passo "Números").
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    const a = items[i];
+    const b = items[j];
+    if (!a || !b) return;
+    const arr = [...items];
+    arr[i] = b;
+    arr[j] = a;
+    onChange(arr);
+  }
 
   return (
     <div className="space-y-4">
@@ -749,13 +820,33 @@ function TimelineEditor({
             <span className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan">
               momento {i + 1}
             </span>
-            <button
-              type="button"
-              onClick={() => remove(i)}
-              className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
-            >
-              <TrashIcon /> remover
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                aria-label="Subir momento"
+                className="font-mono text-xs text-dim hover:text-cyan disabled:opacity-30"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                onClick={() => move(i, 1)}
+                disabled={i === items.length - 1}
+                aria-label="Descer momento"
+                className="font-mono text-xs text-dim hover:text-cyan disabled:opacity-30"
+              >
+                ▼
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="flex items-center gap-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim hover:text-magenta"
+              >
+                <TrashIcon /> remover
+              </button>
+            </div>
           </div>
           <input
             className={`${inputClass} mb-3`}
