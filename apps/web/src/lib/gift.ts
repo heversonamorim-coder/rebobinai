@@ -36,6 +36,10 @@ export interface GiftPayload {
   closingPhotoAssetId?: string;
   /** Roleta de sorteio (Tarefa 4): opções que o destinatário sorteia. */
   roulette?: { options?: string[] };
+  /** Mapa do lugar onde se conheceram (Tarefa 4). */
+  metPlace?: { address?: string };
+  /** Mapa astral simples — signo da data escolhida (Tarefa 4). */
+  astro?: { date?: string };
   theme?: string;
   spotifyTrackUrl?: string;
   [k: string]: unknown;

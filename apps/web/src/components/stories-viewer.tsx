@@ -20,6 +20,8 @@ type SlideKind =
   | 'timeline'
   | 'wrapped'
   | 'music'
+  | 'map'
+  | 'astro'
   | 'roulette'
   | 'closing'
   | 'share';
@@ -86,6 +88,8 @@ export function StoriesViewer({
     [payload.roulette],
   );
   const hasRoulette = rouletteOptions.length >= 2;
+  const metAddress = payload.metPlace?.address?.trim();
+  const astroDate = payload.astro?.date;
 
   const slides = useMemo<Slide[]>(() => {
     // A história (título + recado) fica na própria capa — não vira slide à parte.
@@ -95,14 +99,16 @@ export function StoriesViewer({
     // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
     if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
-    // Roleta (Tarefa 4) — momento lúdico antes do fecho.
+    // Extras "+ Coisas" (Tarefa 4): mapa do local, mapa astral, roleta.
+    if (metAddress) s.push({ key: 'map', kind: 'map' });
+    if (astroDate) s.push({ key: 'astro', kind: 'astro' });
     if (hasRoulette) s.push({ key: 'roulette', kind: 'roulette' });
     // Recado final (Tarefa 3/4) — fecho da rebobinada (mensagem e/ou foto).
     if (hasClosing) s.push({ key: 'closing', kind: 'closing' });
     // Compartilhar como story (Tarefa 4) — só pra quem recebe (tem shareUrl).
     if (shareUrl) s.push({ key: 'share', kind: 'share' });
     return s;
-  }, [payload.timeline, photos.length, hasWrapped, embed, hasRoulette, hasClosing, shareUrl]);
+  }, [payload.timeline, photos.length, hasWrapped, embed, metAddress, astroDate, hasRoulette, hasClosing, shareUrl]);
 
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -199,6 +205,8 @@ export function StoriesViewer({
           <WrappedStats stats={stats} targetDate={payload.counter?.targetDate} />
         )}
         {slide?.kind === 'music' && embed && <MusicSlide embedUrl={embed} />}
+        {slide?.kind === 'map' && metAddress && <MapSlide address={metAddress} />}
+        {slide?.kind === 'astro' && astroDate && <AstroSlide date={astroDate} />}
         {slide?.kind === 'roulette' && hasRoulette && <RouletteSlide options={rouletteOptions} />}
         {slide?.kind === 'closing' && hasClosing && (
           <ClosingSlide
@@ -410,6 +418,107 @@ function MusicSlide({ embedUrl }: { embedUrl: string }) {
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         className="rounded-xl"
       />
+    </div>
+  );
+}
+
+/**
+ * Slide do mapa do local (Tarefa 4). Com uma chave do Google Maps Embed
+ * (NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY) mostra o mapa interativo; sem chave, cai
+ * num cartão com o endereço + botão que abre no Google Maps (sem chave).
+ */
+function MapSlide({ address }: { address: string }) {
+  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
+  const search = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center py-2 text-center">
+      <p className="mb-1 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
+        onde tudo começou
+      </p>
+      <p className="mb-4 font-display text-lg text-glow">{address}</p>
+      {key ? (
+        <iframe
+          data-interactive
+          title="Mapa do local"
+          className="h-64 w-full rounded-xl border border-[var(--line)]"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          src={`https://www.google.com/maps/embed/v1/place?key=${key}&q=${encodeURIComponent(address)}`}
+        />
+      ) : (
+        <div className="flex w-full flex-col items-center gap-4 rounded-xl border border-[var(--line)] bg-panel/40 p-8">
+          <span className="text-5xl">📍</span>
+          <a
+            data-interactive
+            href={search}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
+          >
+            abrir no mapa ►
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Signo (sol) a partir de uma data AAAA-MM-DD, em pt-BR. */
+function zodiacFor(dateStr: string) {
+  const parts = dateStr.split('-');
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  const signs = [
+    { until: [1, 19], sym: '♑', pt: 'Capricórnio', range: '22 dez – 19 jan', blurb: 'Determinação que constrói pra durar.' },
+    { until: [2, 18], sym: '♒', pt: 'Aquário', range: '20 jan – 18 fev', blurb: 'Original, livre e cheio de ideias.' },
+    { until: [3, 20], sym: '♓', pt: 'Peixes', range: '19 fev – 20 mar', blurb: 'Sensível, sonhador e romântico.' },
+    { until: [4, 19], sym: '♈', pt: 'Áries', range: '21 mar – 19 abr', blurb: 'Fogo, coragem e paixão no talo.' },
+    { until: [5, 20], sym: '♉', pt: 'Touro', range: '20 abr – 20 mai', blurb: 'Carinho firme e amor de raiz.' },
+    { until: [6, 20], sym: '♊', pt: 'Gêmeos', range: '21 mai – 20 jun', blurb: 'Papo bom que nunca acaba.' },
+    { until: [7, 22], sym: '♋', pt: 'Câncer', range: '21 jun – 22 jul', blurb: 'Aconchego e coração enorme.' },
+    { until: [8, 22], sym: '♌', pt: 'Leão', range: '23 jul – 22 ago', blurb: 'Brilho, calor e lealdade.' },
+    { until: [9, 22], sym: '♍', pt: 'Virgem', range: '23 ago – 22 set', blurb: 'Cuidado nos detalhes que importam.' },
+    { until: [10, 22], sym: '♎', pt: 'Libra', range: '23 set – 22 out', blurb: 'Parceria, equilíbrio e charme.' },
+    { until: [11, 21], sym: '♏', pt: 'Escorpião', range: '23 out – 21 nov', blurb: 'Intensidade e entrega total.' },
+    { until: [12, 21], sym: '♐', pt: 'Sagitário', range: '22 nov – 21 dez', blurb: 'Aventura de mãos dadas.' },
+    { until: [12, 31], sym: '♑', pt: 'Capricórnio', range: '22 dez – 19 jan', blurb: 'Determinação que constrói pra durar.' },
+  ];
+  for (const s of signs) {
+    if (m < s.until[0]! || (m === s.until[0] && d <= s.until[1]!)) return s;
+  }
+  return signs[0]!;
+}
+
+/** Slide do "mapa astral" simples (Tarefa 4): signo da data + visual estelar. */
+function AstroSlide({ date }: { date: string }) {
+  const z = zodiacFor(date);
+  const stars = [
+    [18, 22],
+    [78, 30],
+    [30, 74],
+    [70, 78],
+    [50, 12],
+    [12, 52],
+    [88, 60],
+  ];
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center py-2 text-center">
+      <p className="mb-1 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
+        o mapa astral de vocês
+      </p>
+      <div className="relative my-4 flex h-40 w-40 items-center justify-center rounded-full border border-cyan/40 bg-[radial-gradient(circle_at_center,rgba(24,233,255,0.12),transparent_70%)]">
+        {stars.map(([x, y], i) => (
+          <span
+            key={i}
+            className="absolute h-1 w-1 rounded-full bg-glow/70"
+            style={{ left: `${x}%`, top: `${y}%` }}
+          />
+        ))}
+        <span className="rb-chroma text-6xl leading-none text-glow">{z.sym}</span>
+      </div>
+      <p className="font-display text-2xl font-bold text-glow">{z.pt}</p>
+      <p className="mt-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-cyan">{z.range}</p>
+      <p className="mt-3 max-w-xs text-sm leading-relaxed text-glow/80">{z.blurb}</p>
     </div>
   );
 }

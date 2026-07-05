@@ -80,7 +80,7 @@ const STEP_FOCUS = [
 ] as const;
 
 // Slides que a prévia pode focar ao editar um campo/extra.
-type Focusable = 'cover' | 'wrapped' | 'closing' | 'roulette';
+type Focusable = 'cover' | 'wrapped' | 'closing' | 'roulette' | 'map' | 'astro';
 
 // Limite de upload — precisa bater com o FileInterceptor da API (10MB).
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -444,6 +444,63 @@ export default function CriarPage() {
                 onChange={(options) => patch({ roulette: { options } })}
                 onFocus={() => setFocusOverride('roulette')}
               />
+            </ExtraCard>
+
+            <ExtraCard
+              emoji="🗺️"
+              title="Onde se conheceram"
+              subtitle="Um mapa do lugar que começou tudo"
+              active={Boolean(payload.metPlace?.address?.trim())}
+              focusKind="map"
+              onFocus={setFocusOverride}
+            >
+              <label className={labelClass} htmlFor="metPlace">
+                Endereço ou lugar
+              </label>
+              <input
+                id="metPlace"
+                className={inputClass}
+                value={payload.metPlace?.address ?? ''}
+                placeholder="Ex.: Parque Ibirapuera, São Paulo"
+                onFocus={() => setFocusOverride('map')}
+                onChange={(e) => patch({ metPlace: { address: e.target.value } })}
+              />
+              <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+                vira um slide com o mapa do local
+              </p>
+            </ExtraCard>
+
+            <ExtraCard
+              emoji="🔮"
+              title="Mapa astral"
+              subtitle="O signo da data de vocês"
+              active={Boolean(payload.astro?.date)}
+              focusKind="astro"
+              onFocus={setFocusOverride}
+            >
+              <label className={labelClass} htmlFor="astroDate">
+                Data (a que se conheceram, ou outra)
+              </label>
+              <input
+                id="astroDate"
+                type="date"
+                className={inputClass}
+                value={payload.astro?.date ?? ''}
+                onFocus={() => setFocusOverride('astro')}
+                onChange={(e) => patch({ astro: { date: e.target.value || undefined } })}
+              />
+              {payload.counter?.targetDate && payload.astro?.date !== payload.counter.targetDate && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    patch({ astro: { date: payload.counter?.targetDate } });
+                    setFocusOverride('astro');
+                  }}
+                  className="mt-2 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-cyan underline underline-offset-4"
+                >
+                  usar a data de início ({payload.counter.targetDate})
+                </button>
+              )}
             </ExtraCard>
           </div>
         </Step>

@@ -47,6 +47,10 @@ export const giftPayloadSchema = z
     closingPhotoAssetId: z.string().max(60).optional(),
     // Roleta de sorteio (Tarefa 4): opções sorteadas pelo destinatário.
     roulette: z.object({ options: z.array(z.string().max(80)).max(12).optional() }).optional(),
+    // Mapa do local onde se conheceram (Tarefa 4).
+    metPlace: z.object({ address: z.string().max(240).optional() }).optional(),
+    // Mapa astral simples — signo da data (Tarefa 4).
+    astro: z.object({ date: z.string().max(40).optional() }).optional(),
     theme: z.string().max(60).optional(),
     spotifyTrackUrl: z.string().url().max(500).optional(),
   })
