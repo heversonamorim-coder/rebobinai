@@ -286,7 +286,10 @@ export default function CriarPage() {
       )}
 
       {step === 1 && (
-        <Step title="A história de vocês" hint="Um título e um recado de coração.">
+        <Step
+          title="Capa - A história de vocês"
+          hint="Título e um recado curto — é o que aparece na capa da rebobinada."
+        >
           <Field
             label="Título"
             value={payload.title ?? ''}
@@ -295,15 +298,22 @@ export default function CriarPage() {
           />
           <div className="mb-5">
             <label className={labelClass} htmlFor="letter">
-              Recado
+              Recado curto
             </label>
             <textarea
               id="letter"
-              className={`${inputClass} min-h-40 resize-y`}
+              maxLength={200}
+              className={`${inputClass} min-h-28 resize-y`}
               value={payload.letter ?? ''}
               onChange={(e) => patch({ letter: e.target.value })}
-              placeholder="Conta um pedaço da história de vocês…"
+              placeholder="Uma frase que abre a rebobinada. Ex.: Marina, cada capítulo com você virou meu preferido ◄◄"
             />
+            <p className="mt-1 flex justify-between gap-3 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+              <span>curtinho — cabe na capa numa tela só</span>
+              <span className={(payload.letter ?? '').length > 160 ? 'text-magenta' : ''}>
+                {(payload.letter ?? '').length}/200
+              </span>
+            </p>
           </div>
         </Step>
       )}
