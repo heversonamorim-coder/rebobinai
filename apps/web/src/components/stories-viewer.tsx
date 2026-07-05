@@ -14,7 +14,15 @@ import { CountdownTimecode } from './countdown-timecode';
 import { Lightbox } from './lightbox';
 import { WrappedStats } from './wrapped-stats';
 
-type SlideKind = 'cover' | 'photos' | 'timeline' | 'wrapped' | 'music' | 'closing' | 'share';
+type SlideKind =
+  | 'cover'
+  | 'photos'
+  | 'timeline'
+  | 'wrapped'
+  | 'music'
+  | 'roulette'
+  | 'closing'
+  | 'share';
 
 export interface StoriesViewerProps {
   payload: GiftPayload;
@@ -73,6 +81,12 @@ export function StoriesViewer({
   }, [assets, payload.closingPhotoAssetId]);
   const hasClosing = Boolean(closingMessage || closingPhoto);
 
+  const rouletteOptions = useMemo(
+    () => (payload.roulette?.options ?? []).map((o) => o.trim()).filter(Boolean),
+    [payload.roulette],
+  );
+  const hasRoulette = rouletteOptions.length >= 2;
+
   const slides = useMemo<Slide[]>(() => {
     // A história (título + recado) fica na própria capa — não vira slide à parte.
     const s: Slide[] = [{ key: 'cover', kind: 'cover' }];
@@ -81,12 +95,14 @@ export function StoriesViewer({
     // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
     if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
+    // Roleta (Tarefa 4) — momento lúdico antes do fecho.
+    if (hasRoulette) s.push({ key: 'roulette', kind: 'roulette' });
     // Recado final (Tarefa 3/4) — fecho da rebobinada (mensagem e/ou foto).
     if (hasClosing) s.push({ key: 'closing', kind: 'closing' });
     // Compartilhar como story (Tarefa 4) — só pra quem recebe (tem shareUrl).
     if (shareUrl) s.push({ key: 'share', kind: 'share' });
     return s;
-  }, [payload.timeline, photos.length, hasWrapped, embed, hasClosing, shareUrl]);
+  }, [payload.timeline, photos.length, hasWrapped, embed, hasRoulette, hasClosing, shareUrl]);
 
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -183,6 +199,7 @@ export function StoriesViewer({
           <WrappedStats stats={stats} targetDate={payload.counter?.targetDate} />
         )}
         {slide?.kind === 'music' && embed && <MusicSlide embedUrl={embed} />}
+        {slide?.kind === 'roulette' && hasRoulette && <RouletteSlide options={rouletteOptions} />}
         {slide?.kind === 'closing' && hasClosing && (
           <ClosingSlide
             message={closingMessage}
@@ -393,6 +410,116 @@ function MusicSlide({ embedUrl }: { embedUrl: string }) {
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         className="rounded-xl"
       />
+    </div>
+  );
+}
+
+/**
+ * Slide da roleta (Tarefa 4): quem recebe clica em "girar" no centro; a roleta
+ * gira e para aleatoriamente numa opção. Roda 100% no cliente (SVG + rotação).
+ */
+function RouletteSlide({ options }: { options: string[] }) {
+  const opts = options.slice(0, 12);
+  const n = opts.length;
+  const seg = 360 / n;
+  const [rot, setRot] = useState(0);
+  const [spinning, setSpinning] = useState(false);
+  const [result, setResult] = useState<number | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+
+  function spin() {
+    if (spinning) return;
+    const k = Math.floor(Math.random() * n);
+    setResult(null);
+    setSpinning(true);
+    // Rotação (graus, horário) que traz o centro do gomo k pro ponteiro (topo).
+    const desired = ((360 - (k + 0.5) * seg) % 360 + 360) % 360;
+    const currentMod = ((rot % 360) + 360) % 360;
+    const delta = (desired - currentMod + 360) % 360;
+    const newRot = rot + 360 * 6 + delta;
+    setRot(newRot);
+    timer.current = setTimeout(() => {
+      setSpinning(false);
+      setResult(k);
+    }, 4300);
+  }
+
+  const colors = ['#FF2E9A', '#18E9FF'];
+  return (
+    <div className="flex min-h-full flex-col items-center justify-center py-2 text-center">
+      <p className="mb-1 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">a roleta de vocês</p>
+      <p className="mb-4 text-sm text-glow/80">Gira e sorteia o que vão fazer ◄◄</p>
+
+      <div className="relative" data-interactive>
+        {/* Ponteiro fixo no topo */}
+        <svg width="240" height="240" viewBox="0 0 200 200" className="max-w-[70vw]">
+          <polygon points="100,2 92,20 108,20" fill="#F1ECFF" />
+          <g
+            style={{
+              transformOrigin: '100px 100px',
+              transform: `rotate(${rot}deg)`,
+              transition: 'transform 4.2s cubic-bezier(0.16, 0.84, 0.3, 1)',
+            }}
+          >
+            {opts.map((label, i) => {
+              const a0 = (i * seg * Math.PI) / 180;
+              const a1 = ((i + 1) * seg * Math.PI) / 180;
+              const x0 = 100 + 88 * Math.sin(a0);
+              const y0 = 100 - 88 * Math.cos(a0);
+              const x1 = 100 + 88 * Math.sin(a1);
+              const y1 = 100 - 88 * Math.cos(a1);
+              const large = seg > 180 ? 1 : 0;
+              const am = (i + 0.5) * seg;
+              const flip = am > 90 && am < 270;
+              const short = label.length > 14 ? `${label.slice(0, 13)}…` : label;
+              return (
+                <g key={i}>
+                  <path
+                    d={`M100 100 L ${x0.toFixed(2)} ${y0.toFixed(2)} A 88 88 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`}
+                    fill={colors[i % colors.length]}
+                    stroke="#0A0713"
+                    strokeWidth="1"
+                  />
+                  <g transform={`rotate(${am} 100 100)`}>
+                    <text
+                      x="100"
+                      y="46"
+                      textAnchor="middle"
+                      fontSize="8"
+                      fontFamily="var(--body)"
+                      fontWeight="600"
+                      fill="#0A0713"
+                      transform={flip ? 'rotate(180 100 46)' : undefined}
+                    >
+                      {short}
+                    </text>
+                  </g>
+                </g>
+              );
+            })}
+          </g>
+          {/* Botão central "girar" */}
+          <g
+            role="button"
+            tabIndex={0}
+            onClick={spin}
+            style={{ cursor: spinning ? 'default' : 'pointer' }}
+          >
+            <circle cx="100" cy="100" r="24" fill="#0A0713" stroke="#F1ECFF" strokeWidth="2" />
+            <text x="100" y="103" textAnchor="middle" fontSize="9" fontFamily="var(--display)" fontWeight="700" fill="#F1ECFF">
+              {spinning ? '...' : 'GIRAR'}
+            </text>
+          </g>
+        </svg>
+      </div>
+
+      <div className="mt-4 h-8">
+        {result !== null && (
+          <p className="rb-fade-in font-display text-lg font-bold text-cyan">→ {opts[result]}</p>
+        )}
+      </div>
     </div>
   );
 }

@@ -45,6 +45,8 @@ export const giftPayloadSchema = z
     closingMessage: z.string().max(2000).optional(),
     // Foto opcional do slide de recado final (Tarefa 4).
     closingPhotoAssetId: z.string().max(60).optional(),
+    // Roleta de sorteio (Tarefa 4): opções sorteadas pelo destinatário.
+    roulette: z.object({ options: z.array(z.string().max(80)).max(12).optional() }).optional(),
     theme: z.string().max(60).optional(),
     spotifyTrackUrl: z.string().url().max(500).optional(),
   })
