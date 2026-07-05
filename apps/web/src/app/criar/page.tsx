@@ -79,6 +79,9 @@ const STEP_FOCUS = [
   'cover',
 ] as const;
 
+// Slides que a prévia pode focar ao editar um campo/extra.
+type Focusable = 'cover' | 'wrapped' | 'closing' | 'roulette';
+
 // Limite de upload — precisa bater com o FileInterceptor da API (10MB).
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -99,8 +102,9 @@ export default function CriarPage() {
   // sobrescreve mais.
   const [counterLabelTouched, setCounterLabelTouched] = useState(false);
   // Foco de campo pode levar a prévia a um slide específico (ex.: no passo dos
-  // números, o contador foca a capa e os cards focam o wrapped).
-  const [focusOverride, setFocusOverride] = useState<'cover' | 'wrapped' | null>(null);
+  // números, o contador foca a capa e os cards focam o wrapped; no "+ Coisas",
+  // cada extra aberto foca seu slide).
+  const [focusOverride, setFocusOverride] = useState<Focusable | null>(null);
 
   // Ao trocar de passo, o override de foco por campo é zerado.
   useEffect(() => {
@@ -401,6 +405,8 @@ export default function CriarPage() {
               title="Recado final"
               subtitle="Uma última mensagem, com foto"
               active={Boolean(payload.closingMessage?.trim() || payload.closingPhotoAssetId)}
+              focusKind="closing"
+              onFocus={setFocusOverride}
             >
               <div className="mb-4">
                 <label className={labelClass} htmlFor="closing">
@@ -411,6 +417,7 @@ export default function CriarPage() {
                   maxLength={280}
                   className={`${inputClass} min-h-28 resize-y`}
                   value={payload.closingMessage ?? ''}
+                  onFocus={() => setFocusOverride('closing')}
                   onChange={(e) => patch({ closingMessage: e.target.value })}
                   placeholder="Ex.: Que venham muitos outros capítulos. Eu te amo ◄◄"
                 />
@@ -421,6 +428,21 @@ export default function CriarPage() {
                 assets={assets}
                 onSelect={(assetId) => patch({ closingPhotoAssetId: assetId })}
                 onUpload={uploadPhotos}
+              />
+            </ExtraCard>
+
+            <ExtraCard
+              emoji="🎡"
+              title="Roleta de sorteio"
+              subtitle="O que vão fazer pra comemorar"
+              active={(payload.roulette?.options ?? []).some((o) => o.trim())}
+              focusKind="roulette"
+              onFocus={setFocusOverride}
+            >
+              <RouletteEditor
+                options={payload.roulette?.options ?? []}
+                onChange={(options) => patch({ roulette: { options } })}
+                onFocus={() => setFocusOverride('roulette')}
               />
             </ExtraCard>
           </div>
@@ -551,12 +573,16 @@ function ExtraCard({
   title,
   subtitle,
   active,
+  focusKind,
+  onFocus,
   children,
 }: {
   emoji: string;
   title: string;
   subtitle: string;
   active?: boolean;
+  focusKind?: Focusable;
+  onFocus?: (k: Focusable) => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(Boolean(active));
@@ -564,7 +590,11 @@ function ExtraCard({
     <div className="overflow-hidden rounded-xl border border-[var(--line)] bg-panel/40">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          if (next && focusKind && onFocus) onFocus(focusKind); // prévia acompanha
+        }}
         aria-expanded={open}
         className="flex w-full items-center gap-3 px-4 py-3 text-left"
       >
@@ -832,6 +862,61 @@ function NumbersEditor({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Editor da roleta (Tarefa 4): lista de opções que o destinatário sorteia. */
+function RouletteEditor({
+  options,
+  onChange,
+  onFocus,
+}: {
+  options: string[];
+  onChange: (o: string[]) => void;
+  onFocus: () => void;
+}) {
+  const list = options.length ? options : ['', ''];
+  function update(i: number, v: string) {
+    onChange(list.map((o, idx) => (idx === i ? v : o)));
+  }
+  function add() {
+    onChange([...list, '']);
+  }
+  function remove(i: number) {
+    onChange(list.filter((_, idx) => idx !== i));
+  }
+  return (
+    <div className="space-y-2">
+      {list.map((o, i) => (
+        <div key={i} className="flex gap-2">
+          <input
+            className={inputClass}
+            value={o}
+            placeholder={`Opção ${i + 1} (ex.: jantar japonês)`}
+            onFocus={onFocus}
+            onChange={(e) => update(i, e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            aria-label="Remover opção"
+            className="flex shrink-0 items-center rounded-lg border border-[var(--line)] px-3 text-dim hover:border-magenta hover:text-magenta"
+          >
+            <TrashIcon />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="w-full rounded-lg border border-dashed border-[var(--line)] py-2.5 font-mono text-xs uppercase tracking-[0.2em] text-dim hover:border-cyan hover:text-cyan"
+      >
+        + adicionar opção
+      </button>
+      <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
+        quem recebe gira a roleta e sorteia o que vão fazer
+      </p>
     </div>
   );
 }

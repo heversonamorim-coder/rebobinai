@@ -34,6 +34,8 @@ export interface GiftPayload {
   closingMessage?: string;
   /** Foto opcional do slide de recado final (id de um GiftAsset). */
   closingPhotoAssetId?: string;
+  /** Roleta de sorteio (Tarefa 4): opções que o destinatário sorteia. */
+  roulette?: { options?: string[] };
   theme?: string;
   spotifyTrackUrl?: string;
   [k: string]: unknown;
