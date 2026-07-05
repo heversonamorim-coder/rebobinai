@@ -65,6 +65,13 @@ export function StoriesViewer({
     (Boolean(payload.counter?.targetDate) && stats.some((s) => s.auto));
 
   const closingMessage = payload.closingMessage?.trim();
+  const closingPhoto = useMemo(() => {
+    const a = payload.closingPhotoAssetId
+      ? (assets ?? []).find((x) => x.id === payload.closingPhotoAssetId)
+      : undefined;
+    return a ? assetUrl(a) : '';
+  }, [assets, payload.closingPhotoAssetId]);
+  const hasClosing = Boolean(closingMessage || closingPhoto);
 
   const slides = useMemo<Slide[]>(() => {
     // A história (título + recado) fica na própria capa — não vira slide à parte.
@@ -74,12 +81,12 @@ export function StoriesViewer({
     // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
     if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
-    // Recado final (Tarefa 3) — fecho da rebobinada.
-    if (closingMessage) s.push({ key: 'closing', kind: 'closing' });
+    // Recado final (Tarefa 3/4) — fecho da rebobinada (mensagem e/ou foto).
+    if (hasClosing) s.push({ key: 'closing', kind: 'closing' });
     // Compartilhar como story (Tarefa 4) — só pra quem recebe (tem shareUrl).
     if (shareUrl) s.push({ key: 'share', kind: 'share' });
     return s;
-  }, [payload.timeline, photos.length, hasWrapped, embed, closingMessage, shareUrl]);
+  }, [payload.timeline, photos.length, hasWrapped, embed, hasClosing, shareUrl]);
 
   const [index, setIndex] = useState(0);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -176,8 +183,12 @@ export function StoriesViewer({
           <WrappedStats stats={stats} targetDate={payload.counter?.targetDate} />
         )}
         {slide?.kind === 'music' && embed && <MusicSlide embedUrl={embed} />}
-        {slide?.kind === 'closing' && closingMessage && (
-          <ClosingSlide message={closingMessage} senderName={payload.senderName} />
+        {slide?.kind === 'closing' && hasClosing && (
+          <ClosingSlide
+            message={closingMessage}
+            photoUrl={closingPhoto}
+            senderName={payload.senderName}
+          />
         )}
         {slide?.kind === 'share' && shareUrl && (
           <ShareSlide
@@ -386,16 +397,34 @@ function MusicSlide({ embedUrl }: { embedUrl: string }) {
   );
 }
 
-/** Slide de recado final (Tarefa 3) — o fecho da rebobinada. */
-function ClosingSlide({ message, senderName }: { message: string; senderName?: string }) {
+/** Slide de recado final (Tarefa 3/4) — o fecho da rebobinada, com foto opcional. */
+function ClosingSlide({
+  message,
+  photoUrl,
+  senderName,
+}: {
+  message?: string;
+  photoUrl?: string;
+  senderName?: string;
+}) {
   return (
     <div className="flex min-h-full flex-col items-center justify-center text-center">
       <p className="mb-6 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
         pra fechar
       </p>
-      <p className="rb-chroma max-w-prose whitespace-pre-wrap font-display text-2xl font-semibold leading-snug text-glow sm:text-3xl">
-        {message}
-      </p>
+      {photoUrl && (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={photoUrl}
+          alt=""
+          className="mb-6 max-h-56 w-auto max-w-full rounded-xl border border-[var(--line)] object-cover"
+        />
+      )}
+      {message && (
+        <p className="rb-chroma max-w-prose whitespace-pre-wrap font-display text-2xl font-semibold leading-snug text-glow sm:text-3xl">
+          {message}
+        </p>
+      )}
       {senderName && (
         <p className="mt-6 font-mono text-xs uppercase tracking-[0.25em] text-dim">— {senderName}</p>
       )}

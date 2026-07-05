@@ -63,7 +63,7 @@ const STEPS = [
   'Fotos',
   'Linha do tempo',
   'Trilha',
-  'Recado final',
+  '+ Coisas',
   'Finalizar',
 ] as const;
 
@@ -392,24 +392,38 @@ export default function CriarPage() {
 
       {step === 6 && (
         <Step
-          title="Um recado final"
-          hint="A última mensagem que aparece pra quem recebe — o fecho da rebobinada."
+          title="+ Coisas na sua rebobinada"
+          hint="Os passos anteriores já dão uma ótima rebobinada. Aqui é opcional — cada item vira um slide extra. Adicione só o que curtir."
         >
-          <div className="mb-2">
-            <label className={labelClass} htmlFor="closing">
-              Recado de fechamento (opcional)
-            </label>
-            <textarea
-              id="closing"
-              className={`${inputClass} min-h-40 resize-y`}
-              value={payload.closingMessage ?? ''}
-              onChange={(e) => patch({ closingMessage: e.target.value })}
-              placeholder="Ex.: Que venham muitos outros capítulos. Eu te amo ◄◄"
-            />
+          <div className="space-y-3">
+            <ExtraCard
+              emoji="💌"
+              title="Recado final"
+              subtitle="Uma última mensagem, com foto"
+              active={Boolean(payload.closingMessage?.trim() || payload.closingPhotoAssetId)}
+            >
+              <div className="mb-4">
+                <label className={labelClass} htmlFor="closing">
+                  Recado de fechamento
+                </label>
+                <textarea
+                  id="closing"
+                  maxLength={280}
+                  className={`${inputClass} min-h-28 resize-y`}
+                  value={payload.closingMessage ?? ''}
+                  onChange={(e) => patch({ closingMessage: e.target.value })}
+                  placeholder="Ex.: Que venham muitos outros capítulos. Eu te amo ◄◄"
+                />
+              </div>
+              <span className={labelClass}>Foto do recado (opcional)</span>
+              <MomentPhoto
+                selectedId={payload.closingPhotoAssetId}
+                assets={assets}
+                onSelect={(assetId) => patch({ closingPhotoAssetId: assetId })}
+                onUpload={uploadPhotos}
+              />
+            </ExtraCard>
           </div>
-          <p className="font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
-            aparece como último slide, logo antes de a pessoa compartilhar
-          </p>
         </Step>
       )}
 
@@ -528,6 +542,48 @@ function Step({
       {hint && <p className="mt-1 mb-6 text-sm text-dim">{hint}</p>}
       {children}
     </section>
+  );
+}
+
+/** Item do menu "+ Coisas": acordeão com um extra opcional da rebobinada. */
+function ExtraCard({
+  emoji,
+  title,
+  subtitle,
+  active,
+  children,
+}: {
+  emoji: string;
+  title: string;
+  subtitle: string;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(Boolean(active));
+  return (
+    <div className="overflow-hidden rounded-xl border border-[var(--line)] bg-panel/40">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+      >
+        <span className="text-xl leading-none">{emoji}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-glow">{title}</span>
+          <span className="block text-xs text-dim">{subtitle}</span>
+        </span>
+        {active && (
+          <span className="rounded-full bg-cyan/15 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.15em] text-cyan">
+            adicionado
+          </span>
+        )}
+        <span className={`font-mono text-lg text-dim transition-transform ${open ? 'rotate-90' : ''}`}>
+          ›
+        </span>
+      </button>
+      {open && <div className="border-t border-[var(--line)] p-4">{children}</div>}
+    </div>
   );
 }
 
