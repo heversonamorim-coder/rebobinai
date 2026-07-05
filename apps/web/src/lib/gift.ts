@@ -153,7 +153,7 @@ export function statChipsFor(occasion: string | null | undefined): GiftStat[] {
       return [
         { value: 5, suffix: 'viagens', label: 'e contando' },
         { value: 300, suffix: 'fotos juntos', label: 'e subindo' },
-        { value: 100, suffix: 'cafés divididos', label: 'e mais um' },
+        { value: 3, suffix: 'copas do mundo', label: 'assistidas juntos' },
       ];
     case 'pais':
       return [
