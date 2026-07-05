@@ -1,7 +1,6 @@
 'use client';
 
 import { Logo, Mark } from '@rebobinai/ui';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 
@@ -56,6 +55,7 @@ export function HeroCarousel() {
         {i === 1 && (
           <ImageSlide
             src="/hero/dia-dos-pais.webp"
+            mobileSrc="/hero/dia-dos-pais-mobile.webp"
             alt="Pai e filho caminhando abraçados num parque ao entardecer"
             kicker="pra o pai"
             title="Pro seu pai, algo que ele nunca viu"
@@ -66,6 +66,7 @@ export function HeroCarousel() {
         {i === 2 && (
           <ImageSlide
             src="/hero/casal.webp"
+            mobileSrc="/hero/casal-mobile.webp"
             alt="Casal abraçado no sofá olhando pela janela ao pôr do sol"
             kicker="pra namorada · namorado"
             title="Um presente que rebobina vocês dois"
@@ -132,11 +133,14 @@ function SlideMarca() {
 }
 
 /**
- * Slide com foto de fundo + filtro Rebobinaí. O texto fica à esquerda, sobre o
- * gradiente escuro (contraste garantido); a imagem "respira" à direita.
+ * Slide com foto de fundo + filtro Rebobinaí. Art-direction: no desktop usa a
+ * foto 16:9 (texto à esquerda, sobre o gradiente escuro); no celular usa uma
+ * versão retrato (`mobileSrc`) com o assunto enquadrado, e o texto vai pro
+ * rodapé sobre um scrim — assim o principal da imagem nunca fica escondido.
  */
 function ImageSlide({
   src,
+  mobileSrc,
   alt,
   kicker,
   title,
@@ -144,6 +148,7 @@ function ImageSlide({
   cta,
 }: {
   src: string;
+  mobileSrc: string;
   alt: string;
   kicker: string;
   title: string;
@@ -152,15 +157,19 @@ function ImageSlide({
 }) {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Foto crua (grayscale pro duotone). Lazy — protege o LCP do slide 1.
-          fill + sizes: o Next serve AVIF/WebP dimensionado por breakpoint. */}
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes="100vw"
-        className="object-cover object-[68%_center] [filter:grayscale(1)_contrast(1.05)_brightness(0.95)]"
-      />
+      {/* Foto crua (grayscale pro duotone). <picture> troca a arte por breakpoint:
+          o navegador baixa só a versão que casa (mobile retrato vs. desktop 16:9). */}
+      <picture>
+        <source media="(max-width: 639px)" srcSet={mobileSrc} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-center [filter:grayscale(1)_contrast(1.05)_brightness(0.95)] sm:object-[68%_center]"
+        />
+      </picture>
 
       {/* Duotone da marca (magenta → ciano) sobre o cinza */}
       <div className="absolute inset-0 bg-gradient-to-br from-magenta to-cyan opacity-80 mix-blend-color" />
@@ -170,13 +179,15 @@ function ImageSlide({
       <div className="rb-hero-grain pointer-events-none absolute inset-0" />
       <div className="rb-scanlines pointer-events-none absolute inset-0" />
       <div className="rb-hero-aberration pointer-events-none absolute inset-0" />
-      {/* Gradiente escuro do lado do texto */}
-      <div className="rb-hero-fade pointer-events-none absolute inset-0" />
-      {/* Vinheta inferior pra dots/scroll ficarem legíveis */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-tape/80 to-transparent" />
+      {/* Desktop: gradiente escuro do lado do texto (esquerda) */}
+      <div className="rb-hero-fade pointer-events-none absolute inset-0 hidden sm:block" />
+      {/* Mobile: scrim de baixo pra cima — texto no rodapé, assunto livre em cima */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,#0A0713_2%,rgba(10,7,19,0.82)_30%,rgba(10,7,19,0.35)_58%,transparent_80%)] sm:hidden" />
+      {/* Desktop: vinheta inferior pra dots/scroll ficarem legíveis */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-1/3 bg-gradient-to-t from-tape/80 to-transparent sm:block" />
 
-      {/* Copy — à esquerda, dentro da zona escura */}
-      <div className="relative z-10 flex h-full max-w-2xl flex-col items-start justify-center px-6 text-left sm:px-12 lg:px-20">
+      {/* Copy — rodapé no celular, centro-esquerda no desktop */}
+      <div className="relative z-10 flex h-full max-w-2xl flex-col items-start justify-end px-6 pb-28 text-left sm:justify-center sm:px-12 sm:pb-0 lg:px-20">
         <Mark size={56} />
         <p className="mt-5 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">{kicker}</p>
         <h2 className="rb-chroma mt-3 font-display text-3xl font-bold leading-tight text-glow sm:text-5xl">
