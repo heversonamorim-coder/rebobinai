@@ -20,6 +20,39 @@ export class AdminService {
     private readonly config: ConfigService,
   ) {}
 
+  /** Lista as rebobinadas (gifts) criadas, mais recentes primeiro. */
+  async listGifts() {
+    const gifts = await this.prisma.gift.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 300,
+      select: {
+        id: true,
+        slug: true,
+        status: true,
+        occasion: true,
+        payload: true,
+        viewCount: true,
+        createdAt: true,
+        paidAt: true,
+      },
+    });
+    return gifts.map((g) => {
+      const p = g.payload as { title?: string; recipientName?: string; senderName?: string } | null;
+      return {
+        id: g.id,
+        slug: g.slug,
+        status: g.status,
+        occasion: g.occasion,
+        title: p?.title ?? null,
+        recipientName: p?.recipientName ?? null,
+        senderName: p?.senderName ?? null,
+        viewCount: g.viewCount,
+        createdAt: g.createdAt,
+        paidAt: g.paidAt,
+      };
+    });
+  }
+
   /** Lista os pedidos (mais recentes primeiro) enriquecidos pra gestão. */
   async listOrders() {
     const orders = await this.prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 300 });

@@ -19,3 +19,16 @@ export interface AdminOrder {
   shippedAt: string | null;
   gift: { slug: string | null; title: string | null };
 }
+
+export interface AdminGift {
+  id: string;
+  slug: string | null;
+  status: 'draft' | 'paid' | 'archived';
+  occasion: string | null;
+  title: string | null;
+  recipientName: string | null;
+  senderName: string | null;
+  viewCount: number;
+  createdAt: string;
+  paidAt: string | null;
+}
