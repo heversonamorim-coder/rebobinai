@@ -234,9 +234,11 @@ export default function CriarPage() {
         <ProgressBar step={step} />
       </header>
 
-      <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,400px)]">
-        {/* Coluna do formulário */}
-        <div>
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
+        {/* Coluna do formulário — min-w-0 deixa o conteúdo largo (ex.: a fileira
+            de fotos) rolar na horizontal em vez de esticar a coluna e espremer a
+            prévia. */}
+        <div className="min-w-0">
           {error && (
             <p className="mb-6 rounded-lg border border-magenta/50 bg-magenta/10 px-4 py-3 text-sm text-glow">
               {error}
@@ -894,7 +896,7 @@ function PhotoPicker({
           </button>
         )}
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="rb-hscroll flex gap-2 overflow-x-auto pb-2">
         {photos.map((a) => (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img

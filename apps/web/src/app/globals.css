@@ -89,3 +89,29 @@ label:has(> input[type='file']) {
     animation: none;
   }
 }
+
+/* Fileira de fotos com scroll horizontal "bonito": snap suave + barra fina na
+   cor da marca, e uma máscara que esmaece a borda direita sugerindo que há mais
+   fotos pra rolar. Usada no seletor de foto do momento (linha do tempo). */
+.rb-hscroll {
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cyan) transparent;
+}
+.rb-hscroll > * {
+  scroll-snap-align: start;
+}
+.rb-hscroll::-webkit-scrollbar {
+  height: 6px;
+}
+.rb-hscroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.rb-hscroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--cyan) 60%, transparent);
+  border-radius: 999px;
+}
+.rb-hscroll::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan);
+}
