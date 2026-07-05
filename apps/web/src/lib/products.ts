@@ -41,3 +41,12 @@ export interface FreightQuote {
 export function emptyShipping(): Shipping {
   return { name: '', phone: '', cep: '', street: '', number: '', complement: '', district: '', city: '', uf: '' };
 }
+
+/**
+ * Preço "a partir de" do plano físico = o produto mais barato do catálogo
+ * (hoje a caneca, R$ 69,90). Fonte única pro display, independente do valor
+ * cosmético do plano no banco — o que cobra de verdade é produto + frete.
+ */
+export function physicalFromPrice(): number {
+  return Math.min(...PHYSICAL_PRODUCTS.map((p) => p.price));
+}

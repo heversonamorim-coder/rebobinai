@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { priceDisplay, type Plan } from '../lib/plans';
+import { formatBRL, priceDisplay, type Plan } from '../lib/plans';
+import { physicalFromPrice } from '../lib/products';
 
 /** Grade de planos com preço de lançamento tachado dirigido por dado (F1-9). */
 export function PricingGrid({ plans }: { plans: Plan[] }) {
@@ -14,6 +15,10 @@ export function PricingGrid({ plans }: { plans: Plan[] }) {
 
 function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
   const price = priceDisplay(plan);
+  const isPhysical = plan.key === 'quadro';
+  // No plano físico o preço mostrado vem do produto mais barato (catálogo), não
+  // do valor cosmético do plano — assim não depende do banco/migração.
+  const currentPrice = isPhysical ? formatBRL(physicalFromPrice()) : price.current;
 
   return (
     <div
@@ -32,20 +37,20 @@ function PricingCard({ plan, highlight }: { plan: Plan; highlight?: boolean }) {
 
       <div className="mt-5">
         {/* Plano físico: o preço varia com o produto → "a partir de". */}
-        {plan.key === 'quadro' && (
+        {isPhysical && (
           <span className="block font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim">
             a partir de
           </span>
         )}
-        {price.strikethrough && (
+        {!isPhysical && price.strikethrough && (
           <span className="block font-mono text-xs text-dim/60 line-through">
             {price.strikethrough}
           </span>
         )}
-        <span className="font-display text-3xl font-bold text-cyan">{price.current}</span>
-        {plan.key === 'quadro' && <span className="ml-1 text-sm text-dim">+ frete</span>}
+        <span className="font-display text-3xl font-bold text-cyan">{currentPrice}</span>
+        {isPhysical && <span className="ml-1 text-sm text-dim">+ frete</span>}
       </div>
-      {price.note && (
+      {!isPhysical && price.note && (
         <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-magenta">
           {price.note}
         </p>
