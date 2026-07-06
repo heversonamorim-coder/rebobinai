@@ -137,6 +137,7 @@ model Order {
 
   // ── Produto físico (plano "Lembrança física", Tarefa 5) ──────────────────
   productKey    String? // 'caneca' | 'camiseta' (nulo em planos digitais)
+  productSize   String? // tamanho da camiseta: P | M | G | GG (nulo na caneca)
   photoAssetId  String? // foto escolhida p/ a caneca (id de um GiftAsset)
   shipping      Json? // endereço de entrega { name, phone, cep, street, number, ... }
   shippingCost  Int? // frete em centavos (calculado por CEP no checkout)
@@ -172,4 +173,33 @@ model Example {
   createdAt DateTime @default(now())
 
   @@index([active, sortOrder])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: contact (dono da tabela ContactMessage)
+// "Fale conosco" do rodapé: mensagens do público ficam salvas e são lidas no
+// admin. Sem PII sensível além de nome/e-mail informados pelo próprio cliente.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  handled   Boolean  @default(false) // marcado como tratado no admin
+  createdAt DateTime @default(now())
+
+  @@index([handled, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: payments (estoque dos produtos físicos — Tarefa 8)
+// Uma linha por produto ('caneca' | 'camiseta'). Sem linha = disponível (default
+// otimista). O admin liga/desliga a venda por falta de estoque.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ProductStock {
+  productKey String   @id // 'caneca' | 'camiseta'
+  available  Boolean  @default(true)
+  updatedAt  DateTime @updatedAt @default(now())
 }

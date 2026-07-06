@@ -15,6 +15,7 @@ import { AsaasClient } from './asaas.client';
 import { FreightService } from './freight.service';
 import { OrderRepository } from './order.repository';
 import { getProduct } from './products';
+import { StockService } from './stock.service';
 import { CardCheckoutDto, FreightDto, PixCheckoutDto } from './dto/checkout.schemas';
 
 type PlanRow = { key: $Enums.PlanKey; name: string; launchPrice: number };
@@ -24,6 +25,7 @@ interface ResolvedOrder {
   description: string;
   physical: {
     productKey?: string;
+    productSize?: string | null;
     photoAssetId?: string | null;
     shipping?: Prisma.InputJsonValue;
     shippingCost?: number;
@@ -42,7 +44,15 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
     private readonly freight: FreightService,
+    private readonly stock: StockService,
   ) {}
+
+  /** Barra o checkout de um produto físico esgotado (estoque desligado). */
+  private async assertInStock(dto: PixCheckoutDto | CardCheckoutDto) {
+    if (dto.planKey === 'quadro' && dto.product && !(await this.stock.isAvailable(dto.product))) {
+      throw new ConflictException('Produto em falta no momento. Escolha outro ou tente mais tarde.');
+    }
+  }
 
   /** Cotação de frete + total do produto físico (não passa pelo gateway). */
   quoteFreight(dto: FreightDto) {
@@ -72,6 +82,9 @@ export class PaymentsService {
     if (product.needsPhoto && !dto.photoAssetId) {
       throw new BadRequestException('Escolha a foto da caneca.');
     }
+    if (product.needsSize && !dto.size) {
+      throw new BadRequestException('Escolha o tamanho da camiseta.');
+    }
     if (!dto.shipping) throw new BadRequestException('Informe o endereço de entrega.');
     const q = this.freight.quote(dto.shipping.cep);
     return {
@@ -79,6 +92,7 @@ export class PaymentsService {
       description: `Rebobinaí · ${product.name}`,
       physical: {
         productKey: product.key,
+        productSize: dto.size ?? null,
         photoAssetId: dto.photoAssetId ?? null,
         shipping: dto.shipping as unknown as Prisma.InputJsonValue,
         shippingCost: q.cost,
@@ -88,6 +102,7 @@ export class PaymentsService {
 
   async checkoutPix(dto: PixCheckoutDto) {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
+    await this.assertInStock(dto);
     const resolved = this.resolveOrder(dto, plan);
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({
@@ -124,6 +139,7 @@ export class PaymentsService {
 
   async checkoutCard(dto: CardCheckoutDto, remoteIp: string) {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
+    await this.assertInStock(dto);
     const resolved = this.resolveOrder(dto, plan);
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({

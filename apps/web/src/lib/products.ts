@@ -10,12 +10,38 @@ export interface PhysicalProduct {
   name: string;
   price: number; // centavos
   needsPhoto: boolean;
+  /** Camiseta escolhe tamanho (P/M/G/GG); caneca não. */
+  needsSize: boolean;
+  /** Foto do produto no /public (o cliente sobe depois; há fallback visual). */
+  image: string;
+  /** Emoji de fallback enquanto a imagem não existe. */
+  emoji: string;
 }
 
 export const PHYSICAL_PRODUCTS: PhysicalProduct[] = [
-  { key: 'caneca', name: 'Caneca personalizada com QR', price: 6990, needsPhoto: true },
-  { key: 'camiseta', name: 'Camiseta Rebobinaí com QR', price: 8990, needsPhoto: false },
+  {
+    key: 'caneca',
+    name: 'Caneca personalizada com QR',
+    price: 6990,
+    needsPhoto: true,
+    needsSize: false,
+    image: '/produtos/caneca.webp',
+    emoji: '☕',
+  },
+  {
+    key: 'camiseta',
+    name: 'Camiseta Rebobinaí com QR',
+    price: 8990,
+    needsPhoto: false,
+    needsSize: true,
+    image: '/produtos/camiseta.webp',
+    emoji: '👕',
+  },
 ];
+
+/** Tamanhos oferecidos pra camiseta. */
+export const SHIRT_SIZES = ['P', 'M', 'G', 'GG'] as const;
+export type ShirtSize = (typeof SHIRT_SIZES)[number];
 
 /** Endereço de entrega do produto físico. */
 export interface Shipping {

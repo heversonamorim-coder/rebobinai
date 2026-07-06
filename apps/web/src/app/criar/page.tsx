@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { CountdownTimecode } from '../../components/countdown-timecode';
 import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
+import { captureError, trackEvent } from '../../lib/analytics';
 import {
   createGift,
   draftFromText,
@@ -63,7 +64,7 @@ const STEPS = [
   'Fotos',
   'Linha do tempo',
   'Trilha',
-  '+ Coisas',
+  'Capriche+',
   'Finalizar',
 ] as const;
 
@@ -102,7 +103,7 @@ export default function CriarPage() {
   // sobrescreve mais.
   const [counterLabelTouched, setCounterLabelTouched] = useState(false);
   // Foco de campo pode levar a prévia a um slide específico (ex.: no passo dos
-  // números, o contador foca a capa e os cards focam o wrapped; no "+ Coisas",
+  // números, o contador foca a capa e os cards focam o wrapped; no "Capriche+",
   // cada extra aberto foca seu slide).
   const [focusOverride, setFocusOverride] = useState<Focusable | null>(null);
 
@@ -175,6 +176,9 @@ export default function CriarPage() {
       saveDraftRef(newRef);
       return newRef;
     } catch (e) {
+      // Observabilidade: é aqui que "alguém tenta criar e não consegue".
+      captureError(e, { where: 'saveDraft', action: ref ? 'update' : 'create', occasion });
+      trackEvent('gift_save_failed', { action: ref ? 'update' : 'create' });
       setError(e instanceof Error ? e.message : 'Não foi possível salvar o rascunho.');
       return null;
     } finally {
@@ -396,7 +400,7 @@ export default function CriarPage() {
 
       {step === 6 && (
         <Step
-          title="+ Coisas na sua rebobinada"
+          title="Capriche+ na sua rebobinada"
           hint="Os passos anteriores já dão uma ótima rebobinada. Aqui é opcional — cada item vira um slide extra. Adicione só o que curtir."
         >
           <div className="space-y-3">
@@ -422,7 +426,6 @@ export default function CriarPage() {
                   placeholder="Ex.: Que venham muitos outros capítulos. Eu te amo ◄◄"
                 />
               </div>
-              <span className={labelClass}>Foto do recado (opcional)</span>
               <MomentPhoto
                 selectedId={payload.closingPhotoAssetId}
                 assets={assets}
@@ -624,7 +627,7 @@ function Step({
   );
 }
 
-/** Item do menu "+ Coisas": acordeão com um extra opcional da rebobinada. */
+/** Item do menu "Capriche+": acordeão com um extra opcional da rebobinada. */
 function ExtraCard({
   emoji,
   title,

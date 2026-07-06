@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Osd } from '@rebobinai/ui';
 import { HeroCarousel } from '../components/hero-carousel';
 import { PricingGrid } from '../components/pricing';
+import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { getPlans } from '../lib/api';
 import { PLANS_FALLBACK } from '../lib/plans';
@@ -142,6 +143,8 @@ export default async function Home() {
           ◄◄ rebobinai.app
         </p>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

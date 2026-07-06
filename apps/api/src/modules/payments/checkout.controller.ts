@@ -10,11 +10,15 @@ import {
 } from './dto/checkout.schemas';
 import { PaymentsService } from './payments.service';
 import { PHYSICAL_PRODUCTS } from './products';
+import { StockService } from './stock.service';
 
 /** Checkout transparente (F1-5): Pix (QR inline) e cartão. */
 @Controller('checkout')
 export class CheckoutController {
-  constructor(private readonly payments: PaymentsService) {}
+  constructor(
+    private readonly payments: PaymentsService,
+    private readonly stock: StockService,
+  ) {}
 
   @Post('pix')
   pix(@Body(new ZodValidationPipe(pixCheckoutSchema)) dto: PixCheckoutDto) {
@@ -31,10 +35,11 @@ export class CheckoutController {
     return this.payments.getOrderStatus(id);
   }
 
-  /** Catálogo de produtos físicos (plano "Lembrança física"). */
+  /** Catálogo de produtos físicos + disponibilidade de estoque (Tarefa 8). */
   @Get('products')
-  products() {
-    return Object.values(PHYSICAL_PRODUCTS);
+  async products() {
+    const avail = await this.stock.availabilityMap();
+    return Object.values(PHYSICAL_PRODUCTS).map((p) => ({ ...p, available: avail[p.key] }));
   }
 
   /** Cotação de frete por CEP + total do produto (não passa pelo gateway). */

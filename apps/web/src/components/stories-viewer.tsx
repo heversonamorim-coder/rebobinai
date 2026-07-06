@@ -1,13 +1,16 @@
 'use client';
 
+import { Logo } from '@rebobinai/ui';
 import QRCode from 'qrcode';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   assetUrl,
+  daysSince,
   defaultCounterLabel,
   type GiftAsset,
   type GiftCounter,
   type GiftPayload,
+  type GiftStat,
 } from '../lib/gift';
 import { spotifyEmbedUrl } from '../lib/spotify';
 import { CountdownTimecode } from './countdown-timecode';
@@ -99,7 +102,7 @@ export function StoriesViewer({
     // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
     if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
-    // Extras "+ Coisas" (Tarefa 4): mapa do local, mapa astral, roleta.
+    // Extras "Capriche+" (Tarefa 4): mapa do local, mapa astral, roleta.
     if (metAddress) s.push({ key: 'map', kind: 'map' });
     if (astroDate) s.push({ key: 'astro', kind: 'astro' });
     if (hasRoulette) s.push({ key: 'roulette', kind: 'roulette' });
@@ -220,6 +223,8 @@ export function StoriesViewer({
             shareUrl={shareUrl}
             title={payload.title}
             recipientName={payload.recipientName}
+            stats={stats}
+            targetDate={payload.counter?.targetDate}
           />
         )}
       </div>
@@ -581,7 +586,12 @@ function RouletteSlide({ options }: { options: string[] }) {
               const y1 = 100 - 88 * Math.cos(a1);
               const large = seg > 180 ? 1 : 0;
               const am = (i + 0.5) * seg;
-              const flip = am > 90 && am < 270;
+              // O flip precisa considerar a rotação da roda (rot), não só o
+              // ângulo estático do gomo: como a roda inteira gira, decidir pelo
+              // ângulo NA TELA (am + rot) mantém as labels de pé onde a roda
+              // para — senão metade fica de cabeça pra baixo após girar.
+              const screenAngle = (((am + rot) % 360) + 360) % 360;
+              const flip = screenAngle > 90 && screenAngle < 270;
               const short = label.length > 14 ? `${label.slice(0, 13)}…` : label;
               return (
                 <g key={i}>
@@ -679,10 +689,14 @@ function ShareSlide({
   shareUrl,
   title,
   recipientName,
+  stats,
+  targetDate,
 }: {
   shareUrl: string;
   title?: string;
   recipientName?: string;
+  stats: GiftStat[];
+  targetDate?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -719,7 +733,7 @@ function ShareSlide({
   async function downloadStoryImage() {
     setBusy(true);
     try {
-      const dataUrl = await buildStoryImage(shareUrl, title, recipientName);
+      const dataUrl = await buildStoryImage(shareUrl, { title, recipientName, stats, targetDate });
       const a = document.createElement('a');
       a.href = dataUrl;
       a.download = 'rebobinai-story.png';
@@ -735,6 +749,18 @@ function ShareSlide({
 
   return (
     <div className="flex min-h-full flex-col items-center justify-center text-center">
+      {/* Marca clicável → home (abre em outra aba pra não perder o presente) */}
+      <a
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-interactive
+        aria-label="Conhecer o Rebobinaí"
+        className="mb-6 inline-block transition hover:brightness-110"
+      >
+        <Logo size="md" static />
+      </a>
+
       <p className="mb-3 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
         gostou? compartilha ◄◄
       </p>
@@ -775,23 +801,69 @@ function ShareSlide({
         </button>
       </div>
 
-      <p className="mt-6 font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/60">
-        ◄◄ rebobinaí
-      </p>
+      {/* Retribuir: leva pra criar a própria rebobinada (abre em outra aba) */}
+      <a
+        href="/criar"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-interactive
+        className="mt-8 font-display text-sm font-semibold text-glow underline decoration-magenta decoration-2 underline-offset-4 transition hover:text-magenta"
+      >
+        retribuir com um presente ►
+      </a>
+
+      {/* Instagram da marca */}
+      <a
+        href="https://instagram.com/rebobinai.app"
+        target="_blank"
+        rel="noopener noreferrer"
+        data-interactive
+        className="mt-5 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim transition hover:text-cyan"
+      >
+        ◄◄ @rebobinai.app no instagram
+      </a>
     </div>
   );
 }
 
 /**
- * Monta uma imagem 1080×1920 (formato story) no canvas: fundo da marca, título,
- * QR do presente e chamada pra apontar a câmera. Sem libs extras — usa o
- * `qrcode` já presente. Devolve um data URL PNG.
+ * Resolve os stats do wrapped pra texto pronto de impressão (mesma lógica do
+ * WrappedStats): auto = dias desde a data; ∞/sem valor = mostra o sufixo.
+ */
+function resolveStatsForImage(
+  stats: GiftStat[],
+  targetDate?: string,
+): { text: string; label: string }[] {
+  const days = daysSince(targetDate);
+  const out: { text: string; label: string }[] = [];
+  for (const s of stats) {
+    if (s.auto) {
+      if (days == null) continue; // sem data → sem card automático
+      out.push({ text: `${days.toLocaleString('pt-BR')} dias`, label: s.label });
+    } else {
+      const infinite = s.suffix === '∞' || s.value == null;
+      if (infinite) {
+        out.push({ text: s.suffix ?? '∞', label: s.label });
+      } else {
+        const val = (s.value ?? 0).toLocaleString('pt-BR');
+        out.push({ text: s.suffix ? `${val} ${s.suffix}` : val, label: s.label });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Monta uma imagem 1080×1920 (formato story) no canvas: fundo da marca, o QR do
+ * presente e a chamada pra apontar a câmera. O miolo prioriza o WRAPPED ("os
+ * números de vocês") quando houver — é o slide mais marcante pra postar; sem
+ * números, cai pra CAPA (título). Sem libs extras — usa o `qrcode` já presente.
  */
 async function buildStoryImage(
   shareUrl: string,
-  title?: string,
-  recipientName?: string,
+  opts: { title?: string; recipientName?: string; stats: GiftStat[]; targetDate?: string },
 ): Promise<string> {
+  const { title, recipientName, stats, targetDate } = opts;
   const W = 1080;
   const H = 1920;
   const canvas = document.createElement('canvas');
@@ -817,27 +889,42 @@ async function buildStoryImage(
   // Selo topo.
   ctx.fillStyle = '#18E9FF';
   ctx.font = '600 34px "Space Mono", monospace';
-  ctx.fillText('◄◄ REBOBINAÍ', W / 2, 220);
+  ctx.fillText('◄◄ REBOBINAÍ', W / 2, 200);
 
-  // Título (quebra em linhas).
-  ctx.fillStyle = '#F1ECFF';
-  const heading = title || 'A nossa história';
-  wrapText(ctx, heading, W / 2, 560, W - 200, 96, 'bold 84px "Chakra Petch", sans-serif');
+  // Miolo: prioridade 1 = wrapped (os números); prioridade 2 = capa (título).
+  const numbers = resolveStatsForImage(stats, targetDate).slice(0, 3);
+  if (numbers.length > 0) {
+    ctx.fillStyle = 'rgba(241,236,255,0.85)';
+    ctx.font = '600 40px "Space Mono", monospace';
+    ctx.fillText('OS NÚMEROS DE VOCÊS', W / 2, 320);
 
-  // Subtítulo.
-  ctx.fillStyle = 'rgba(241,236,255,0.85)';
-  ctx.font = '400 40px "Space Grotesk", sans-serif';
-  ctx.fillText(
-    recipientName ? `feito com amor pra ${recipientName}` : 'aperta o play e se emociona',
-    W / 2,
-    900,
-  );
+    let y = 480;
+    for (const r of numbers) {
+      ctx.fillStyle = '#FF2E9A';
+      ctx.font = 'bold 104px "Chakra Petch", sans-serif';
+      wrapText(ctx, r.text, W / 2, y, W - 160, 104, 'bold 104px "Chakra Petch", sans-serif');
+      ctx.fillStyle = '#18E9FF';
+      ctx.font = '600 32px "Space Mono", monospace';
+      ctx.fillText(r.label.toUpperCase(), W / 2, y + 54);
+      y += 175;
+    }
+  } else {
+    ctx.fillStyle = '#F1ECFF';
+    wrapText(ctx, title || 'A nossa história', W / 2, 540, W - 200, 96, 'bold 84px "Chakra Petch", sans-serif');
+    ctx.fillStyle = 'rgba(241,236,255,0.85)';
+    ctx.font = '400 40px "Space Grotesk", sans-serif';
+    ctx.fillText(
+      recipientName ? `feito com amor pra ${recipientName}` : 'aperta o play e se emociona',
+      W / 2,
+      860,
+    );
+  }
 
-  // QR num cartão claro.
-  const qrSize = 520;
+  // QR num cartão claro (comum aos dois layouts).
+  const qrSize = 460;
   const qrX = (W - qrSize) / 2;
-  const qrY = 1040;
-  const pad = 48;
+  const qrY = 1080;
+  const pad = 44;
   roundRect(ctx, qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2, 40);
   ctx.fillStyle = '#F1ECFF';
   ctx.fill();
@@ -852,7 +939,7 @@ async function buildStoryImage(
   // Chamada embaixo.
   ctx.fillStyle = '#18E9FF';
   ctx.font = '600 40px "Space Mono", monospace';
-  ctx.fillText('aponte a câmera pra ver', W / 2, qrY + qrSize + pad + 120);
+  ctx.fillText('aponte a câmera pra ver', W / 2, qrY + qrSize + pad + 110);
 
   ctx.fillStyle = 'rgba(241,236,255,0.55)';
   ctx.font = '400 32px "Space Grotesk", sans-serif';

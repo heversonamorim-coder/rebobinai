@@ -88,6 +88,7 @@ export interface OrderStatus {
 export interface PhysicalCheckout {
   product?: ProductKey;
   photoAssetId?: string;
+  size?: string;
   shipping?: Shipping;
 }
 
@@ -123,6 +124,21 @@ export function checkoutCard(
 
 export function getOrderStatus(orderId: string): Promise<OrderStatus> {
   return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
+}
+
+/**
+ * Disponibilidade de estoque por produto (Tarefa 8). Falha-otimista: se a API
+ * não responder, considera disponível (o checkout re-valida no servidor).
+ */
+export async function getProductAvailability(): Promise<Partial<Record<ProductKey, boolean>>> {
+  try {
+    const list = await request<{ key: ProductKey; available?: boolean }[]>('/checkout/products', {
+      cache: 'no-store',
+    });
+    return Object.fromEntries(list.map((p) => [p.key, p.available !== false]));
+  } catch {
+    return {};
+  }
 }
 
 /** Cotação de frete por CEP + total do produto físico. */
@@ -250,6 +266,20 @@ export async function getPlans(): Promise<Plan[]> {
   } catch {
     return [];
   }
+}
+
+/** "Fale conosco" (rodapé) — grava a mensagem pra leitura no admin. */
+export interface ContactInput {
+  name: string;
+  email: string;
+  message: string;
+}
+
+export function sendContactMessage(input: ContactInput): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/contact', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }
 
 /** Leitura pública por slug (SSR de /p/:slug). Retorna null quando não existe. */

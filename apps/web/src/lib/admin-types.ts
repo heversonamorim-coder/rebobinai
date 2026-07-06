@@ -12,6 +12,7 @@ export interface AdminOrder {
   customerEmail: string | null;
   productKey: string | null;
   productName: string | null;
+  productSize: string | null;
   photoUrl: string | null;
   shipping: Shipping | null;
   shippingCost: number | null;
@@ -31,4 +32,21 @@ export interface AdminGift {
   viewCount: number;
   createdAt: string;
   paidAt: string | null;
+}
+
+/** Mensagem do "fale conosco" (rodapé), lida no admin (Tarefa 2). */
+export interface AdminMessage {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  handled: boolean;
+  createdAt: string;
+}
+
+/** Estoque de um produto físico (Tarefa 8). */
+export interface AdminStock {
+  productKey: string;
+  name: string;
+  available: boolean;
 }
