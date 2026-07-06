@@ -4,22 +4,28 @@ import { Logo } from '@rebobinai/ui';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+// Âncoras absolutas (/#...) para funcionarem tanto na home quanto nas páginas
+// internas (ex.: /exemplos), sempre levando às seções da página principal.
 const LINKS = [
-  { href: '#como-funciona', label: 'Como funciona' },
-  { href: '#inspiracao', label: 'Inspiração' },
-  { href: '#planos', label: 'Planos' },
-  { href: '#faq', label: 'Perguntas frequentes' },
+  { href: '/#como-funciona', label: 'Como funciona' },
+  { href: '/#inspiracao', label: 'Inspiração' },
+  { href: '/#planos', label: 'Planos' },
+  { href: '/#faq', label: 'Perguntas frequentes' },
 ];
 
 /**
- * Menu do topo que aparece ao sair do hero (home). Traz o logo e um menu
- * hambúrguer com as seções do site. Client — depende de scroll e do toggle.
+ * Menu do topo com o logo e as seções do site.
+ * - variant "hero" (padrão): aparece ao sair do hero na home (depende de scroll).
+ * - variant "solid": sempre visível — para páginas internas sem hero (/exemplos).
+ * Client — depende de scroll e do toggle do menu.
  */
-export function SiteHeader() {
-  const [show, setShow] = useState(false);
+export function SiteHeader({ variant = 'hero' }: { variant?: 'hero' | 'solid' }) {
+  const solid = variant === 'solid';
+  const [show, setShow] = useState(solid);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    if (solid) return; // sempre visível, sem depender de scroll
     function onScroll() {
       const past = window.scrollY > window.innerHeight * 0.75;
       setShow(past);
@@ -28,11 +34,11 @@ export function SiteHeader() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [solid]);
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-40 border-b border-[var(--line)] bg-tape/90 backdrop-blur transition-transform duration-300 ${
+      className={`${solid ? 'sticky' : 'fixed'} inset-x-0 top-0 z-40 border-b border-[var(--line)] bg-tape/90 backdrop-blur transition-transform duration-300 ${
         show ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
