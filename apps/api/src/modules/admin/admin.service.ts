@@ -7,12 +7,7 @@ import { ContactService } from '../contact/contact.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { getProduct, ProductKey } from '../payments/products';
 import { StockService } from '../payments/stock.service';
-import type { Archiver, ArchiverOptions } from 'archiver';
-
-// A fábrica do archiver é chamável em runtime (module.exports = function), mas o
-// @types desta versão só expõe os tipos nomeados — resolvemos por require tipado.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const createArchive = require('archiver') as (format: string, options?: ArchiverOptions) => Archiver;
+import { ZipArchive } from 'archiver';
 
 /**
  * Camada de relatório/fulfillment do admin de vendas (Tarefa 6). Lê pedidos +
@@ -203,7 +198,7 @@ export class AdminService {
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="producao-${productKey}-${stamp}.zip"`);
 
-    const archive = createArchive('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
     archive.on('warning', (e: Error) => this.logger.warn(`archiver: ${e.message}`));
     archive.on('error', (e: Error) => this.logger.error(`archiver: ${e.message}`));
     archive.pipe(res);
