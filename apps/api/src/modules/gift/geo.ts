@@ -55,8 +55,12 @@ export function clientIp(forwarded: string | undefined, fallback: string | undef
   return first || fallback;
 }
 
-/** Planos que incluem o analytics do presente ("Analytics de aberturas"). */
-const ANALYTICS_PLANS = new Set(['forever']);
+/**
+ * Planos que incluem o analytics do presente ("Analytics de aberturas").
+ * 'forever' (Pra Sempre) e 'quadro' (Lembrança física, que tem "Tudo do Pra
+ * Sempre").
+ */
+const ANALYTICS_PLANS = new Set(['forever', 'quadro']);
 export function planHasAnalytics(planKey: string | null | undefined): boolean {
   return Boolean(planKey && ANALYTICS_PLANS.has(planKey));
 }
