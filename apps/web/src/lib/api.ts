@@ -282,6 +282,40 @@ export function sendContactMessage(input: ContactInput): Promise<{ ok: boolean }
   });
 }
 
+/** Estatísticas de acesso do presente (analytics). */
+export interface GiftStats {
+  eligible: boolean;
+  title: string | null;
+  total?: number;
+  unique?: number;
+  daily?: { day: string; total: number; unique: number }[];
+  byUf?: { uf: string; count: number }[];
+}
+
+/** Beacon do navegador: registra o acesso (best-effort, não bloqueia a página). */
+export function recordGiftView(slug: string): void {
+  try {
+    void fetch(`${BASE}/public/gifts/${encodeURIComponent(slug)}/view`, {
+      method: 'POST',
+      keepalive: true,
+    });
+  } catch {
+    // beacon é best-effort — falha não afeta a experiência
+  }
+}
+
+/** Estatísticas do presente por slug. null se o presente não existe. */
+export async function getGiftStats(slug: string): Promise<GiftStats | null> {
+  try {
+    return await request<GiftStats>(`/public/gifts/${encodeURIComponent(slug)}/stats`, {
+      cache: 'no-store',
+    });
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 /** Leitura pública por slug (SSR de /p/:slug). Retorna null quando não existe. */
 export async function getPublicGift(slug: string): Promise<PublicGift | null> {
   try {

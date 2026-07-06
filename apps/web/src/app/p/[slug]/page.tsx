@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { StoriesViewer } from '../../../components/stories-viewer';
+import { ViewBeacon } from '../../../components/view-beacon';
 import { getPublicGift } from '../../../lib/api';
 
 // Contador ao vivo: sem cache estático, renderiza a cada abertura.
@@ -53,6 +54,7 @@ export default async function GiftPublicPage({ params }: Params) {
   const url = `${await siteBaseUrl()}/p/${slug}`;
   return (
     <main className="flex min-h-svh w-full items-stretch justify-center bg-tape sm:items-center sm:py-6">
+      <ViewBeacon slug={slug} />
       <StoriesViewer
         payload={gift.payload}
         occasion={gift.occasion}

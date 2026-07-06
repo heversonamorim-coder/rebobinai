@@ -57,14 +57,35 @@ model Gift {
   payload        Json       @default("{}") // conteúdo (título, carta, timeline...)
   watermark      Boolean    @default(true) // removida ao pagar
   viewCount      Int        @default(0) // contador ao vivo da página pública (F1-3)
+  paidPlanKey    String? // plano pago (habilita analytics quando incluso)
   paidAt         DateTime?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
   assets GiftAsset[]
+  views  GiftView[]
 
   @@index([status, createdAt])
   @@index([ownerAccountId])
+}
+
+// Registro de acesso à página pública (analytics do presente). Uma linha por
+// abertura; guarda um hash do IP (não o IP cru) e a geo derivada no servidor.
+model GiftView {
+  id        String   @id @default(cuid())
+  giftId    String
+  gift      Gift     @relation(fields: [giftId], references: [id], onDelete: Cascade)
+  ipHash    String // sha256(ip + giftId) — dedup de únicos sem guardar o IP
+  country   String?
+  region    String? // UF (sigla) quando disponível
+  city      String?
+  lat       Float?
+  lon       Float?
+  day       String // 'YYYY-MM-DD' no fuso America/Sao_Paulo (gráfico de 7 dias)
+  createdAt DateTime @default(now())
+
+  @@index([giftId, createdAt])
+  @@index([giftId, ipHash])
 }
 
 model GiftAsset {

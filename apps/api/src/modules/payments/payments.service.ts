@@ -15,6 +15,7 @@ import { AsaasClient } from './asaas.client';
 import { FreightService } from './freight.service';
 import { OrderRepository } from './order.repository';
 import { getProduct } from './products';
+import { planHasAnalytics } from '../gift/geo';
 import { StockService } from './stock.service';
 import { CardCheckoutDto, FreightDto, PixCheckoutDto } from './dto/checkout.schemas';
 
@@ -173,7 +174,11 @@ export class PaymentsService {
     // Cartão aprovado na hora ativa o presente já; o webhook confirma de novo
     // (idempotente).
     if (status === 'paid') {
-      await this.fulfill({ giftId: order.giftId, customerEmail: order.customerEmail });
+      await this.fulfill({
+        giftId: order.giftId,
+        customerEmail: order.customerEmail,
+        planKey: order.planKey,
+      });
     }
     return { orderId: order.id, status };
   }
@@ -215,14 +220,21 @@ export class PaymentsService {
    * Ativa o presente (slug + remove marca) e dispara o e-mail com o link.
    * Falha de e-mail não derruba o fluxo — o pagamento já foi processado.
    */
-  private async fulfill(order: { giftId: string; customerEmail: string | null }) {
-    const gift = await this.gifts.markPaid(order.giftId);
+  private async fulfill(order: { giftId: string; customerEmail: string | null; planKey: string }) {
+    const gift = await this.gifts.markPaid(order.giftId, order.planKey);
     if (order.customerEmail && gift.slug) {
-      const base = this.config.get<string>('WEB_URL') ?? 'http://localhost:3000';
+      const base = (this.config.get<string>('WEB_URL') ?? 'http://localhost:3000')
+        .split(',')[0]
+        ?.trim()
+        .replace(/\/+$/, '');
       const payload = gift.payload as unknown as { title?: string } | null;
       const title = payload?.title || 'sua rebobinada';
+      // Link de estatísticas só entra no e-mail se o plano incluir analytics.
+      const statsUrl = planHasAnalytics(order.planKey) ? `${base}/p/${gift.slug}/stats` : undefined;
       try {
-        await this.notifications.sendGiftLink(order.customerEmail, title, `${base}/p/${gift.slug}`);
+        await this.notifications.sendGiftLink(order.customerEmail, title, `${base}/p/${gift.slug}`, {
+          statsUrl,
+        });
       } catch (e) {
         this.logger.error(`Falha ao enviar e-mail do pedido: ${e instanceof Error ? e.message : e}`);
       }
