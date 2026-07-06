@@ -6,6 +6,7 @@ import { CountdownTimecode } from '../../components/countdown-timecode';
 import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
 import { captureError, trackEvent } from '../../lib/analytics';
+import { useSpeechToText } from '../../lib/use-speech';
 import {
   createGift,
   draftFromText,
@@ -1364,6 +1365,13 @@ function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // Ditado por voz: os trechos finais vão sendo anexados ao texto (Opção A).
+  const speech = useSpeechToText((t) => {
+    const chunk = t.trim();
+    if (!chunk) return;
+    setText((prev) => (prev ? `${prev.replace(/\s+$/, '')} ${chunk}` : chunk));
+  });
+
   async function generate() {
     if (text.trim().length < 10) {
       setErr('Conta um pouco mais da história (mínimo umas linhas).');
@@ -1421,6 +1429,36 @@ function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
         onChange={(e) => setText(e.target.value)}
         placeholder="Ex.: A Marina e eu nos conhecemos em 2019 numa festa de amigos. Nosso primeiro date foi no cinema, choveu muito. Em 2021 fomos morar juntos e adotamos a Nina. Quero surpreender ela nos 4 anos de namoro…"
       />
+
+      {speech.supported && (
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => (speech.listening ? speech.stop() : speech.start())}
+            aria-pressed={speech.listening}
+            className={`flex shrink-0 items-center gap-2 rounded-lg border px-4 py-2 font-mono text-[0.7rem] uppercase tracking-[0.15em] transition ${
+              speech.listening
+                ? 'border-magenta bg-magenta/10 text-magenta'
+                : 'border-cyan/50 text-cyan hover:border-cyan'
+            }`}
+          >
+            {speech.listening ? (
+              <>
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-magenta" />
+                parar · gravando
+              </>
+            ) : (
+              <>🎤 falar a história</>
+            )}
+          </button>
+          {speech.listening && (
+            <span className="min-w-0 flex-1 truncate text-xs italic text-dim">
+              {speech.interim ? `${speech.interim}…` : 'pode falar ◄◄'}
+            </span>
+          )}
+        </div>
+      )}
+
       {err && <p className="mt-2 text-sm text-magenta">{err}</p>}
       <button
         type="button"
