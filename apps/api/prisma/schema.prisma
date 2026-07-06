@@ -191,3 +191,15 @@ model ContactMessage {
 
   @@index([handled, createdAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: payments (estoque dos produtos físicos — Tarefa 8)
+// Uma linha por produto ('caneca' | 'camiseta'). Sem linha = disponível (default
+// otimista). O admin liga/desliga a venda por falta de estoque.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ProductStock {
+  productKey String   @id // 'caneca' | 'camiseta'
+  available  Boolean  @default(true)
+  updatedAt  DateTime @updatedAt @default(now())
+}

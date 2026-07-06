@@ -126,6 +126,21 @@ export function getOrderStatus(orderId: string): Promise<OrderStatus> {
   return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
 }
 
+/**
+ * Disponibilidade de estoque por produto (Tarefa 8). Falha-otimista: se a API
+ * não responder, considera disponível (o checkout re-valida no servidor).
+ */
+export async function getProductAvailability(): Promise<Partial<Record<ProductKey, boolean>>> {
+  try {
+    const list = await request<{ key: ProductKey; available?: boolean }[]>('/checkout/products', {
+      cache: 'no-store',
+    });
+    return Object.fromEntries(list.map((p) => [p.key, p.available !== false]));
+  } catch {
+    return {};
+  }
+}
+
 /** Cotação de frete por CEP + total do produto físico. */
 export function getFreight(cep: string, product: ProductKey): Promise<FreightQuote> {
   return request<FreightQuote>('/checkout/freight', {

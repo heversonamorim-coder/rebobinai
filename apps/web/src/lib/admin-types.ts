@@ -43,3 +43,10 @@ export interface AdminMessage {
   handled: boolean;
   createdAt: string;
 }
+
+/** Estoque de um produto físico (Tarefa 8). */
+export interface AdminStock {
+  productKey: string;
+  name: string;
+  available: boolean;
+}

@@ -11,6 +11,7 @@ import {
   getGift,
   getOrderStatus,
   getPlans,
+  getProductAvailability,
   uploadGiftImageProgress,
   type PhysicalCheckout,
   type PixCheckoutResult,
@@ -50,6 +51,7 @@ export default function PagarPage() {
   const [product, setProduct] = useState<ProductKey | ''>('');
   const [size, setSize] = useState<ShirtSize | ''>('');
   const [photoAssetId, setPhotoAssetId] = useState<string>('');
+  const [availability, setAvailability] = useState<Partial<Record<ProductKey, boolean>>>({});
   const [shipping, setShipping] = useState<Shipping>(emptyShipping());
   const [freight, setFreight] = useState<FreightQuote | null>(null);
   const [freightErr, setFreightErr] = useState<string | null>(null);
@@ -79,6 +81,11 @@ export default function PagarPage() {
       })
       .catch(() => setNoDraft(true));
     getPlans().then((p) => p.length > 0 && setPlans(p));
+  }, []);
+
+  // Disponibilidade de estoque (Tarefa 8) — produto esgotado não pode ser vendido.
+  useEffect(() => {
+    getProductAvailability().then(setAvailability);
   }, []);
 
   const isPhysical = planKey === 'quadro';
@@ -205,6 +212,7 @@ export default function PagarPage() {
     !isPhysical ||
     Boolean(
       product &&
+        availability[product] !== false &&
         shippingComplete &&
         freight &&
         (product !== 'caneca' || photoAssetId) &&
@@ -301,25 +309,38 @@ export default function PagarPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {PHYSICAL_PRODUCTS.map((p) => {
                     const active = product === p.key;
+                    const soldOut = availability[p.key] === false;
                     return (
                       <button
                         key={p.key}
                         type="button"
+                        disabled={soldOut}
                         onClick={() => {
+                          if (soldOut) return;
                           setProduct(p.key);
                           if (!p.needsPhoto) setPhotoAssetId('');
                           if (!p.needsSize) setSize('');
                         }}
-                        className={`flex items-center gap-3 rounded-lg border px-3 py-3 text-left ${
-                          active ? 'border-cyan bg-panel' : 'border-[var(--line)] bg-panel/40'
+                        className={`relative flex items-center gap-3 rounded-lg border px-3 py-3 text-left ${
+                          soldOut
+                            ? 'cursor-not-allowed border-[var(--line)] bg-panel/20 opacity-60'
+                            : active
+                              ? 'border-cyan bg-panel'
+                              : 'border-[var(--line)] bg-panel/40'
                         }`}
                       >
                         <ProductThumb src={p.image} emoji={p.emoji} alt={p.name} />
                         <span className="min-w-0">
                           <span className="block font-display text-glow">{p.name}</span>
-                          <span className="mt-1 block font-mono text-xs text-cyan">
-                            {formatBRL(p.price)} + frete
-                          </span>
+                          {soldOut ? (
+                            <span className="mt-1 block font-mono text-xs uppercase tracking-[0.15em] text-magenta">
+                              em falta
+                            </span>
+                          ) : (
+                            <span className="mt-1 block font-mono text-xs text-cyan">
+                              {formatBRL(p.price)} + frete
+                            </span>
+                          )}
                         </span>
                       </button>
                     );

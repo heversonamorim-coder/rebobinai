@@ -8,16 +8,18 @@ import { CheckoutController } from './checkout.controller';
 import { FreightService } from './freight.service';
 import { OrderRepository } from './order.repository';
 import { PaymentsService } from './payments.service';
+import { StockRepository } from './stock.repository';
+import { StockService } from './stock.service';
 
 /**
- * Bounded context: payments (dono da tabela Order).
+ * Bounded context: payments (dono das tabelas Order e ProductStock).
  * Comunicação entre módulos por serviços exportados: usa GiftService (ativar o
  * presente ao pagar) e PlanService (resolver o preço). Não toca tabelas alheias.
  */
 @Module({
   imports: [GiftModule, PromotionsModule, NotificationsModule],
   controllers: [CheckoutController, AsaasWebhookController],
-  providers: [PaymentsService, AsaasClient, OrderRepository, FreightService],
-  exports: [PaymentsService],
+  providers: [PaymentsService, AsaasClient, OrderRepository, FreightService, StockService, StockRepository],
+  exports: [PaymentsService, StockService],
 })
 export class PaymentsModule {}

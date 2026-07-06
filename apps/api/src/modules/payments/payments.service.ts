@@ -15,6 +15,7 @@ import { AsaasClient } from './asaas.client';
 import { FreightService } from './freight.service';
 import { OrderRepository } from './order.repository';
 import { getProduct } from './products';
+import { StockService } from './stock.service';
 import { CardCheckoutDto, FreightDto, PixCheckoutDto } from './dto/checkout.schemas';
 
 type PlanRow = { key: $Enums.PlanKey; name: string; launchPrice: number };
@@ -43,7 +44,15 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
     private readonly freight: FreightService,
+    private readonly stock: StockService,
   ) {}
+
+  /** Barra o checkout de um produto físico esgotado (estoque desligado). */
+  private async assertInStock(dto: PixCheckoutDto | CardCheckoutDto) {
+    if (dto.planKey === 'quadro' && dto.product && !(await this.stock.isAvailable(dto.product))) {
+      throw new ConflictException('Produto em falta no momento. Escolha outro ou tente mais tarde.');
+    }
+  }
 
   /** Cotação de frete + total do produto físico (não passa pelo gateway). */
   quoteFreight(dto: FreightDto) {
@@ -93,6 +102,7 @@ export class PaymentsService {
 
   async checkoutPix(dto: PixCheckoutDto) {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
+    await this.assertInStock(dto);
     const resolved = this.resolveOrder(dto, plan);
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({
@@ -129,6 +139,7 @@ export class PaymentsService {
 
   async checkoutCard(dto: CardCheckoutDto, remoteIp: string) {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
+    await this.assertInStock(dto);
     const resolved = this.resolveOrder(dto, plan);
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({
