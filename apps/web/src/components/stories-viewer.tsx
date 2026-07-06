@@ -99,7 +99,7 @@ export function StoriesViewer({
     // Wrapped fica logo APÓS a linha do tempo (não mistura com os momentos).
     if (hasWrapped) s.push({ key: 'wrapped', kind: 'wrapped' });
     if (embed) s.push({ key: 'music', kind: 'music' });
-    // Extras "+ Coisas" (Tarefa 4): mapa do local, mapa astral, roleta.
+    // Extras "Capriche+" (Tarefa 4): mapa do local, mapa astral, roleta.
     if (metAddress) s.push({ key: 'map', kind: 'map' });
     if (astroDate) s.push({ key: 'astro', kind: 'astro' });
     if (hasRoulette) s.push({ key: 'roulette', kind: 'roulette' });
@@ -581,7 +581,12 @@ function RouletteSlide({ options }: { options: string[] }) {
               const y1 = 100 - 88 * Math.cos(a1);
               const large = seg > 180 ? 1 : 0;
               const am = (i + 0.5) * seg;
-              const flip = am > 90 && am < 270;
+              // O flip precisa considerar a rotação da roda (rot), não só o
+              // ângulo estático do gomo: como a roda inteira gira, decidir pelo
+              // ângulo NA TELA (am + rot) mantém as labels de pé onde a roda
+              // para — senão metade fica de cabeça pra baixo após girar.
+              const screenAngle = (((am + rot) % 360) + 360) % 360;
+              const flip = screenAngle > 90 && screenAngle < 270;
               const short = label.length > 14 ? `${label.slice(0, 13)}…` : label;
               return (
                 <g key={i}>
