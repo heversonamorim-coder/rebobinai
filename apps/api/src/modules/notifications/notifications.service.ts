@@ -13,7 +13,12 @@ export class NotificationsService {
   constructor(private readonly email: EmailClient) {}
 
   /** E-mail com o link do presente liberado, disparado no gift.paid (F1-6/F1-8). */
-  async sendGiftLink(to: string, giftTitle: string, url: string): Promise<void> {
+  async sendGiftLink(
+    to: string,
+    giftTitle: string,
+    url: string,
+    opts?: { statsUrl?: string },
+  ): Promise<void> {
     let siteOrigin = 'https://rebobinai.app';
     try {
       siteOrigin = new URL(url).origin;
@@ -42,7 +47,7 @@ export class NotificationsService {
     return this.email.send({
       to,
       subject: `◄◄ ${giftTitle} está no ar!`,
-      html: giftLinkHtml(giftTitle, url, { siteOrigin, whatsapp, hasQr }),
+      html: giftLinkHtml(giftTitle, url, { siteOrigin, whatsapp, hasQr, statsUrl: opts?.statsUrl }),
       attachments,
     });
   }
@@ -103,8 +108,18 @@ function trackingHtml(data: { productName: string; trackingCode: string; giftTit
 function giftLinkHtml(
   title: string,
   url: string,
-  opts: { siteOrigin: string; whatsapp: string; hasQr: boolean },
+  opts: { siteOrigin: string; whatsapp: string; hasQr: boolean; statsUrl?: string },
 ): string {
+  const statsBlock = opts.statsUrl
+    ? `<tr>
+              <td align="center" style="padding-top:28px;">
+                <div style="border-top:1px solid #2a1c40;padding-top:24px;">
+                  <div style="font-size:13px;color:#A08FC4;padding-bottom:12px;">📈 Acompanhe quem abriu o seu presente:</div>
+                  <a href="${escapeHtml(opts.statsUrl)}" style="display:inline-block;border:2px solid #FF2E9A;color:#FF2E9A;text-decoration:none;font-weight:bold;padding:10px 22px;border-radius:10px;letter-spacing:1px;text-transform:uppercase;font-size:13px;">ver estatísticas ►</a>
+                </div>
+              </td>
+            </tr>`
+    : '';
   const qrBlock = opts.hasQr
     ? `<tr>
               <td align="center" style="padding-top:32px;">
@@ -144,6 +159,7 @@ function giftLinkHtml(
             </tr>
             ${qrBlock}
             <tr><td align="center" style="padding-top:24px;font-size:12px;color:#A08FC4;word-break:break-all;">${escapeHtml(url)}</td></tr>
+            ${statsBlock}
             <tr>
               <td align="center" style="padding-top:32px;font-size:12px;">
                 <a href="${escapeHtml(opts.siteOrigin)}" style="color:#18E9FF;text-decoration:none;">rebobinai.app</a>

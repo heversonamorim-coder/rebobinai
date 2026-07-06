@@ -39,15 +39,32 @@ export class GiftRepository {
     });
   }
 
+  /** Registra um acesso (analytics) e incrementa o contador — mesma transação. */
+  recordView(data: Prisma.GiftViewUncheckedCreateInput) {
+    return this.prisma.$transaction([
+      this.prisma.giftView.create({ data }),
+      this.prisma.gift.update({ where: { id: data.giftId }, data: { viewCount: { increment: 1 } } }),
+    ]);
+  }
+
+  /** Todos os acessos de um presente (para agregar as estatísticas). */
+  listViews(giftId: string) {
+    return this.prisma.giftView.findMany({
+      where: { giftId },
+      select: { ipHash: true, region: true, country: true, city: true, day: true, createdAt: true },
+    });
+  }
+
   /**
-   * Ativa o presente ao pagar (F1-6): status=paid, remove marca, gera slug e
-   * grava o evento gift.paid no outbox — tudo na MESMA transação.
+   * Ativa o presente ao pagar (F1-6): status=paid, remove marca, gera slug,
+   * guarda o plano pago (habilita analytics) e grava gift.paid no outbox — tudo
+   * na MESMA transação.
    */
-  markPaid(giftId: string, slug: string) {
+  markPaid(giftId: string, slug: string, paidPlanKey?: string) {
     return this.prisma.$transaction(async (tx) => {
       const gift = await tx.gift.update({
         where: { id: giftId },
-        data: { status: 'paid', watermark: false, slug, paidAt: new Date() },
+        data: { status: 'paid', watermark: false, slug, paidAt: new Date(), paidPlanKey },
         include: this.withAssets,
       });
       await tx.outboxEvent.create({

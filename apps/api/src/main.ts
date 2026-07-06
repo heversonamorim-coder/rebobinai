@@ -7,6 +7,9 @@ async function bootstrap() {
   // Observabilidade antes de tudo (no-op sem SENTRY_DSN).
   const sentryOn = initSentry();
   const app = await NestFactory.create(AppModule);
+  // Confia no proxy (Railway) pra que req.ip reflita o IP real do cliente via
+  // X-Forwarded-For — usado no analytics de acessos do presente.
+  app.getHttpAdapter().getInstance().set('trust proxy', true);
   // CORS multi-origem: WEB_URL aceita lista separada por vírgula (ex.: domínio
   // de produção + previews do Vercel). Barras finais são normalizadas.
   const origin = (process.env.WEB_URL ?? 'http://localhost:3000')

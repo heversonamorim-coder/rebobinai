@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { MediaService } from '../media/media.service';
 import { GiftRepository } from './gift.repository';
 import { AddAssetDto, CreateGiftDto, UpdateGiftDto } from './dto/gift.schemas';
+import { brDay, geoLookup, hashIp, planHasAnalytics } from './geo';
 import { generateSlug } from './slug';
 
 /**
@@ -42,9 +43,65 @@ export class GiftService {
     if (!gift || gift.status !== 'paid') {
       throw new NotFoundException('Presente não encontrado');
     }
-    const updated = await this.repo.incrementViews(slug);
-    const { editToken: _omit, ...pub } = this.withAssetUrls(updated);
+    // A contagem de acessos é feita pelo beacon do navegador (recordView), pra
+    // capturar o IP real do visitante — não a do servidor que faz o SSR.
+    const { editToken: _omit, ...pub } = this.withAssetUrls(gift);
     return pub;
+  }
+
+  /**
+   * Registra um acesso à página pública (analytics). Chamado pelo beacon do
+   * navegador, então enxerga o IP real do visitante. Silencioso se não achar.
+   */
+  async recordView(slug: string, ip: string | undefined): Promise<{ ok: boolean }> {
+    const gift = await this.repo.findBySlug(slug);
+    if (!gift || gift.status !== 'paid') return { ok: false };
+    const geo = geoLookup(ip);
+    await this.repo.recordView({
+      giftId: gift.id,
+      ipHash: hashIp(ip, gift.id),
+      country: geo.country,
+      region: geo.region,
+      city: geo.city,
+      lat: geo.lat,
+      lon: geo.lon,
+      day: brDay(),
+    });
+    return { ok: true };
+  }
+
+  /**
+   * Estatísticas do presente (analytics) por slug. Só quando o plano pago inclui
+   * o recurso; senão devolve { eligible: false } pra UI mostrar o upsell.
+   */
+  async getStats(slug: string) {
+    const gift = await this.repo.findBySlug(slug);
+    if (!gift || gift.status !== 'paid') throw new NotFoundException('Presente não encontrado');
+    const title = (gift.payload as { title?: string } | null)?.title ?? null;
+    if (!planHasAnalytics(gift.paidPlanKey)) {
+      return { eligible: false as const, title };
+    }
+
+    const views = await this.repo.listViews(gift.id);
+    const total = views.length;
+    const unique = new Set(views.map((v) => v.ipHash)).size;
+
+    // Últimos 7 dias (fuso BR): total + únicos por dia.
+    const days: string[] = [];
+    for (let i = 6; i >= 0; i--) days.push(brDay(new Date(Date.now() - i * 86_400_000)));
+    const daily = days.map((day) => {
+      const dv = views.filter((v) => v.day === day);
+      return { day, total: dv.length, unique: new Set(dv.map((v) => v.ipHash)).size };
+    });
+
+    // Por UF (para o mapa) — acessos do Brasil com região conhecida.
+    const ufMap = new Map<string, number>();
+    for (const v of views) if (v.region) ufMap.set(v.region, (ufMap.get(v.region) ?? 0) + 1);
+    const byUf = [...ufMap.entries()]
+      .map(([uf, count]) => ({ uf, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return { eligible: true as const, title, total, unique, daily, byUf };
   }
 
   async update(id: string, editToken: string, dto: UpdateGiftDto) {
@@ -91,14 +148,14 @@ export class GiftService {
    * Ativa o presente ao confirmar o pagamento (F1-6). Idempotente: se já está
    * pago, apenas retorna. Gera um slug único com retry em caso de colisão.
    */
-  async markPaid(giftId: string) {
+  async markPaid(giftId: string, planKey?: string) {
     const gift = await this.repo.findById(giftId);
     if (!gift) throw new NotFoundException('Presente não encontrado');
     if (gift.status === 'paid') return gift;
 
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        return await this.repo.markPaid(giftId, generateSlug());
+        return await this.repo.markPaid(giftId, generateSlug(), planKey);
       } catch (e) {
         const isSlugCollision =
           e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
