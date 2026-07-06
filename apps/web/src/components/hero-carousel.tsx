@@ -107,27 +107,56 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-/** Slide 1 — a marca, idêntico ao hero original (sem foto). */
+/**
+ * Slide 1 — a marca, agora com foto de fundo (quem recebe se emocionando com a
+ * rebobinada) + filtro Rebobinaí. Conteúdo centralizado sobre um scrim que
+ * garante leitura. Art-direction: 16:9 no desktop, versão mais quadrada no
+ * mobile. É o primeiro slide → carrega com prioridade (protege o LCP).
+ */
 function SlideMarca() {
   return (
-    <div className="flex h-full flex-col items-center justify-center px-5 text-center">
-      <div className="rb-vhs-tilt flex flex-col items-center gap-6">
-        <Mark size={104} />
-        <Logo size="hero" />
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Foto de fundo (grayscale pro duotone) */}
+      <picture>
+        <source media="(max-width: 639px)" srcSet="/hero/marca-mobile.webp" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero/marca.webp"
+          alt=""
+          fetchPriority="high"
+          className="absolute inset-0 h-full w-full object-cover object-center [filter:grayscale(1)_contrast(1.05)_brightness(0.92)]"
+        />
+      </picture>
+
+      {/* Filtro Rebobinaí: duotone + sombras + grain + scanlines + aberração */}
+      <div className="absolute inset-0 bg-gradient-to-br from-magenta to-cyan opacity-80 mix-blend-color" />
+      <div className="absolute inset-0 bg-tape opacity-45 mix-blend-multiply" />
+      <div className="rb-hero-grain pointer-events-none absolute inset-0" />
+      <div className="rb-scanlines pointer-events-none absolute inset-0" />
+      <div className="rb-hero-aberration pointer-events-none absolute inset-0" />
+      {/* Scrim central: escurece onde fica a marca/CTA, deixa a cena respirar nas bordas */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,7,19,0.66),rgba(10,7,19,0.42)_60%,rgba(10,7,19,0.28))]" />
+
+      {/* Conteúdo da marca — centralizado, sobre o scrim */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center px-5 text-center">
+        <div className="rb-vhs-tilt flex flex-col items-center gap-6">
+          <Mark size={104} />
+          <Logo size="hero" />
+        </div>
+        <p className="rb-tagline mt-8">
+          <span className="rb-rew">◄◄</span> rebobina a nossa história{' '}
+          <b className="font-normal text-[var(--magenta)]">· com IA</b>
+        </p>
+        <Link
+          href="/criar"
+          className="mt-12 rounded-lg bg-magenta px-8 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
+        >
+          criar meu presente ►
+        </Link>
+        <p className="mt-8 font-mono text-xs uppercase tracking-[0.3em] text-glow/70">
+          grátis pra criar e ver a prévia
+        </p>
       </div>
-      <p className="rb-tagline mt-8">
-        <span className="rb-rew">◄◄</span> rebobina a nossa história{' '}
-        <b className="font-normal text-[var(--magenta)]">· com IA</b>
-      </p>
-      <Link
-        href="/criar"
-        className="mt-12 rounded-lg bg-magenta px-8 py-4 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
-      >
-        criar meu presente ►
-      </Link>
-      <p className="mt-8 font-mono text-xs uppercase tracking-[0.3em] text-dim">
-        grátis pra criar e ver a prévia
-      </p>
     </div>
   );
 }
