@@ -428,42 +428,41 @@ function MusicSlide({ embedUrl }: { embedUrl: string }) {
 }
 
 /**
- * Slide do mapa do local (Tarefa 4). Com uma chave do Google Maps Embed
- * (NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY) mostra o mapa interativo; sem chave, cai
- * num cartão com o endereço + botão que abre no Google Maps (sem chave).
+ * Slide do mapa do local (Tarefa 4). O mapa carrega SEMPRE inline: com a chave
+ * oficial (NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY) usa a Embed API; sem chave, usa o
+ * embed keyless do Google (output=embed) — assim ninguém precisa sair do site.
+ * Um link discreto abre no Google Maps pra quem quiser rota/street view.
  */
 function MapSlide({ address }: { address: string }) {
   const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY;
-  const search = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  const q = encodeURIComponent(address);
+  const search = `https://www.google.com/maps/search/?api=1&query=${q}`;
+  const embedSrc = key
+    ? `https://www.google.com/maps/embed/v1/place?key=${key}&q=${q}`
+    : `https://maps.google.com/maps?q=${q}&z=15&output=embed`;
   return (
     <div className="flex min-h-full flex-col items-center justify-center py-2 text-center">
       <p className="mb-1 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
         onde tudo começou
       </p>
       <p className="mb-4 font-display text-lg text-glow">{address}</p>
-      {key ? (
-        <iframe
-          data-interactive
-          title="Mapa do local"
-          className="h-64 w-full rounded-xl border border-[var(--line)]"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          src={`https://www.google.com/maps/embed/v1/place?key=${key}&q=${encodeURIComponent(address)}`}
-        />
-      ) : (
-        <div className="flex w-full flex-col items-center gap-4 rounded-xl border border-[var(--line)] bg-panel/40 p-8">
-          <span className="text-5xl">📍</span>
-          <a
-            data-interactive
-            href={search}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
-          >
-            abrir no mapa ►
-          </a>
-        </div>
-      )}
+      <iframe
+        data-interactive
+        title="Mapa do local"
+        className="h-64 w-full rounded-xl border border-[var(--line)]"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        src={embedSrc}
+      />
+      <a
+        data-interactive
+        href={search}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim transition hover:text-cyan"
+      >
+        abrir no Google Maps ↗
+      </a>
     </div>
   );
 }

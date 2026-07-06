@@ -444,7 +444,7 @@ export default function CriarPage() {
             </ExtraCard>
 
             <ExtraCard
-              emoji="🎡"
+              emoji="🎯"
               title="Roleta de sorteio"
               subtitle="O que vão fazer pra comemorar"
               active={(payload.roulette?.options ?? []).some((o) => o.trim())}
