@@ -10,6 +10,7 @@ const customerSchema = z.object({
 });
 
 const productSchema = z.enum(['caneca', 'camiseta']);
+const sizeSchema = z.enum(['P', 'M', 'G', 'GG']);
 
 /** Endereço de entrega do produto físico (plano "Lembrança física"). */
 const shippingSchema = z.object({
@@ -29,7 +30,7 @@ const shippingSchema = z.object({
  * `.superRefine` roda depois do parse — só quando planKey === 'quadro'.
  */
 function physicalRefine(
-  data: { planKey: string; product?: string; photoAssetId?: string; shipping?: unknown },
+  data: { planKey: string; product?: string; photoAssetId?: string; size?: string; shipping?: unknown },
   ctx: z.RefinementCtx,
 ) {
   if (data.planKey !== 'quadro') return;
@@ -42,6 +43,9 @@ function physicalRefine(
   if (data.product === 'caneca' && !data.photoAssetId) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['photoAssetId'], message: 'Escolha a foto da caneca.' });
   }
+  if (data.product === 'camiseta' && !data.size) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['size'], message: 'Escolha o tamanho da camiseta.' });
+  }
 }
 
 export const pixCheckoutSchema = z
@@ -53,6 +57,7 @@ export const pixCheckoutSchema = z
     // Só usados no plano físico:
     product: productSchema.optional(),
     photoAssetId: z.string().max(60).optional(),
+    size: sizeSchema.optional(),
     shipping: shippingSchema.optional(),
   })
   .superRefine(physicalRefine);
@@ -65,6 +70,7 @@ export const cardCheckoutSchema = z
     customer: customerSchema,
     product: productSchema.optional(),
     photoAssetId: z.string().max(60).optional(),
+    size: sizeSchema.optional(),
     shipping: shippingSchema.optional(),
     card: z.object({
       holderName: z.string().min(2).max(120),

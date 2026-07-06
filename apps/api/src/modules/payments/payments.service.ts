@@ -24,6 +24,7 @@ interface ResolvedOrder {
   description: string;
   physical: {
     productKey?: string;
+    productSize?: string | null;
     photoAssetId?: string | null;
     shipping?: Prisma.InputJsonValue;
     shippingCost?: number;
@@ -72,6 +73,9 @@ export class PaymentsService {
     if (product.needsPhoto && !dto.photoAssetId) {
       throw new BadRequestException('Escolha a foto da caneca.');
     }
+    if (product.needsSize && !dto.size) {
+      throw new BadRequestException('Escolha o tamanho da camiseta.');
+    }
     if (!dto.shipping) throw new BadRequestException('Informe o endereço de entrega.');
     const q = this.freight.quote(dto.shipping.cep);
     return {
@@ -79,6 +83,7 @@ export class PaymentsService {
       description: `Rebobinaí · ${product.name}`,
       physical: {
         productKey: product.key,
+        productSize: dto.size ?? null,
         photoAssetId: dto.photoAssetId ?? null,
         shipping: dto.shipping as unknown as Prisma.InputJsonValue,
         shippingCost: q.cost,

@@ -12,6 +12,7 @@ export interface AdminOrder {
   customerEmail: string | null;
   productKey: string | null;
   productName: string | null;
+  productSize: string | null;
   photoUrl: string | null;
   shipping: Shipping | null;
   shippingCost: number | null;

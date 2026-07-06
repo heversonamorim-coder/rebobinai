@@ -303,6 +303,7 @@ function OrderCard({
           {isPhysical && order.productName && (
             <span className="ml-2 rounded-full bg-magenta/20 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-magenta">
               {order.productName}
+              {order.productSize ? ` · tam ${order.productSize}` : ''}
             </span>
           )}
         </span>

@@ -88,6 +88,7 @@ export interface OrderStatus {
 export interface PhysicalCheckout {
   product?: ProductKey;
   photoAssetId?: string;
+  size?: string;
   shipping?: Shipping;
 }
 

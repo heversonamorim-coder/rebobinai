@@ -13,11 +13,16 @@ export interface PhysicalProduct {
   price: number;
   /** Caneca leva foto personalizada; camiseta não. */
   needsPhoto: boolean;
+  /** Camiseta escolhe tamanho (P/M/G/GG); caneca não. */
+  needsSize: boolean;
 }
 
+export const SHIRT_SIZES = ['P', 'M', 'G', 'GG'] as const;
+export type ShirtSize = (typeof SHIRT_SIZES)[number];
+
 export const PHYSICAL_PRODUCTS: Record<ProductKey, PhysicalProduct> = {
-  caneca: { key: 'caneca', name: 'Caneca personalizada com QR', price: 6990, needsPhoto: true },
-  camiseta: { key: 'camiseta', name: 'Camiseta Rebobinaí com QR', price: 8990, needsPhoto: false },
+  caneca: { key: 'caneca', name: 'Caneca personalizada com QR', price: 6990, needsPhoto: true, needsSize: false },
+  camiseta: { key: 'camiseta', name: 'Camiseta Rebobinaí com QR', price: 8990, needsPhoto: false, needsSize: true },
 };
 
 export function getProduct(key: string | undefined): PhysicalProduct | null {

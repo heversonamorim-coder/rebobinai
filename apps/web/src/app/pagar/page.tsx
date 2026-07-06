@@ -22,10 +22,13 @@ import {
   emptyShipping,
   PHYSICAL_PRODUCTS,
   physicalFromPrice,
+  SHIRT_SIZES,
   type FreightQuote,
   type ProductKey,
   type Shipping,
+  type ShirtSize,
 } from '../../lib/products';
+import { ProductThumb } from '../../components/product-thumb';
 
 const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
@@ -45,6 +48,7 @@ export default function PagarPage() {
   // Plano físico ("+Lembrança física"): produto, foto (caneca), endereço, frete.
   const [assets, setAssets] = useState<GiftAsset[]>([]);
   const [product, setProduct] = useState<ProductKey | ''>('');
+  const [size, setSize] = useState<ShirtSize | ''>('');
   const [photoAssetId, setPhotoAssetId] = useState<string>('');
   const [shipping, setShipping] = useState<Shipping>(emptyShipping());
   const [freight, setFreight] = useState<FreightQuote | null>(null);
@@ -129,7 +133,12 @@ export default function PagarPage() {
 
   // Campos extras do plano físico (vazios nos planos digitais).
   const physical: PhysicalCheckout = isPhysical
-    ? { product: product || undefined, photoAssetId: photoAssetId || undefined, shipping }
+    ? {
+        product: product || undefined,
+        photoAssetId: photoAssetId || undefined,
+        size: size || undefined,
+        shipping,
+      }
     : {};
 
   async function payPix() {
@@ -194,7 +203,13 @@ export default function PagarPage() {
   );
   const physicalValid =
     !isPhysical ||
-    Boolean(product && shippingComplete && freight && (product !== 'caneca' || photoAssetId));
+    Boolean(
+      product &&
+        shippingComplete &&
+        freight &&
+        (product !== 'caneca' || photoAssetId) &&
+        (product !== 'camiseta' || size),
+    );
 
   if (noDraft) {
     return (
@@ -293,20 +308,46 @@ export default function PagarPage() {
                         onClick={() => {
                           setProduct(p.key);
                           if (!p.needsPhoto) setPhotoAssetId('');
+                          if (!p.needsSize) setSize('');
                         }}
-                        className={`rounded-lg border px-4 py-3 text-left ${
+                        className={`flex items-center gap-3 rounded-lg border px-3 py-3 text-left ${
                           active ? 'border-cyan bg-panel' : 'border-[var(--line)] bg-panel/40'
                         }`}
                       >
-                        <span className="block font-display text-glow">{p.name}</span>
-                        <span className="mt-1 block font-mono text-xs text-cyan">
-                          {formatBRL(p.price)} + frete
+                        <ProductThumb src={p.image} emoji={p.emoji} alt={p.name} />
+                        <span className="min-w-0">
+                          <span className="block font-display text-glow">{p.name}</span>
+                          <span className="mt-1 block font-mono text-xs text-cyan">
+                            {formatBRL(p.price)} + frete
+                          </span>
                         </span>
                       </button>
                     );
                   })}
                 </div>
               </div>
+
+              {product === 'camiseta' && (
+                <div>
+                  <span className={labelClass}>Tamanho da camiseta</span>
+                  <div className="flex flex-wrap gap-2">
+                    {SHIRT_SIZES.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setSize(s)}
+                        className={`h-11 w-11 rounded-lg border font-display text-sm font-semibold transition ${
+                          size === s
+                            ? 'border-cyan bg-cyan text-tape'
+                            : 'border-[var(--line)] bg-panel/40 text-glow hover:border-cyan'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {product === 'caneca' && (
                 <div>

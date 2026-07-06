@@ -137,6 +137,7 @@ model Order {
 
   // ── Produto físico (plano "Lembrança física", Tarefa 5) ──────────────────
   productKey    String? // 'caneca' | 'camiseta' (nulo em planos digitais)
+  productSize   String? // tamanho da camiseta: P | M | G | GG (nulo na caneca)
   photoAssetId  String? // foto escolhida p/ a caneca (id de um GiftAsset)
   shipping      Json? // endereço de entrega { name, phone, cep, street, number, ... }
   shippingCost  Int? // frete em centavos (calculado por CEP no checkout)

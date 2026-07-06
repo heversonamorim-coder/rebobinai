@@ -103,6 +103,7 @@ export class AdminService {
         // Fulfillment do produto físico:
         productKey: o.productKey,
         productName: product?.name ?? null,
+        productSize: o.productSize,
         photoUrl: asset && base ? `${base}/${asset.r2Key}` : null,
         shipping: o.shipping,
         shippingCost: o.shippingCost,
