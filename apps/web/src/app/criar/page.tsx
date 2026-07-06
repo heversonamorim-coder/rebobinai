@@ -90,6 +90,15 @@ const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
 const labelClass = 'mb-2 block font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim';
 
+// Host exibido no preview do link ("seu presente está pronto"). Bate com a URL
+// do site (NEXT_PUBLIC_SITE_URL) — em produção, rebobinai.app.
+const SITE_HOST = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rebobinai.app')
+  .replace(/^https?:\/\//, '')
+  .replace(/\/+$/, '');
+
+// Exemplos por posição no placeholder da roleta (2ª caixa = cinema).
+const ROULETTE_EXAMPLES = ['jantar japonês', 'cinema', 'praia', 'maratona de séries'];
+
 export default function CriarPage() {
   const [step, setStep] = useState(0);
   const [occasion, setOccasion] = useState('');
@@ -401,7 +410,7 @@ export default function CriarPage() {
       {step === 6 && (
         <Step
           title="Capriche+ na sua rebobinada"
-          hint="Os passos anteriores já dão uma ótima rebobinada. Aqui é opcional — cada item vira um slide extra. Adicione só o que curtir."
+          hint="Os passos anteriores já dão uma ótima rebobinada. Aqui é opcional — cada item vira um story extra. Adicione só o que curtir."
         >
           <div className="space-y-3">
             <ExtraCard
@@ -469,7 +478,7 @@ export default function CriarPage() {
                 onChange={(e) => patch({ metPlace: { address: e.target.value } })}
               />
               <p className="mt-1 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim/70">
-                vira um slide com o mapa do local
+                vira um story com o mapa do local
               </p>
             </ExtraCard>
 
@@ -579,7 +588,7 @@ function ProgressBar({
   disabled?: boolean;
 }) {
   return (
-    <div className="mt-4 flex items-center gap-2">
+    <div className="mt-4 flex items-start gap-2">
       {STEPS.map((label, i) => (
         <button
           key={label}
@@ -814,7 +823,7 @@ function NumbersEditor({
           os números <span className="text-dim">· o wrapped de vocês</span>
         </p>
         <p className="mb-3 mt-1 text-xs text-dim">
-          Viram o slide “Os números de vocês”, com contagem animada.
+          Viram o story “Os números de vocês”, com contagem animada.
         </p>
         <div className="space-y-3">
           {stats.map((s, i) =>
@@ -953,7 +962,7 @@ function RouletteEditor({
           <input
             className={inputClass}
             value={o}
-            placeholder={`Opção ${i + 1} (ex.: jantar japonês)`}
+            placeholder={`Opção ${i + 1} (ex.: ${ROULETTE_EXAMPLES[i] ?? 'surpresa'})`}
             onFocus={onFocus}
             onChange={(e) => update(i, e.target.value)}
           />
@@ -1435,7 +1444,7 @@ function LockedLink() {
       <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim">
         🔒 seu link secreto
       </p>
-      <code className="mt-2 block font-mono text-lg text-dim/70">rebobinai.app/p/•••••</code>
+      <code className="mt-2 block font-mono text-lg text-dim/70">{SITE_HOST}/p/•••••</code>
       <Link
         href="/pagar"
         className="mt-4 block w-full rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
