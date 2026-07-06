@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { CountdownTimecode } from '../../components/countdown-timecode';
 import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
+import { captureError, trackEvent } from '../../lib/analytics';
 import {
   createGift,
   draftFromText,
@@ -175,6 +176,9 @@ export default function CriarPage() {
       saveDraftRef(newRef);
       return newRef;
     } catch (e) {
+      // Observabilidade: é aqui que "alguém tenta criar e não consegue".
+      captureError(e, { where: 'saveDraft', action: ref ? 'update' : 'create', occasion });
+      trackEvent('gift_save_failed', { action: ref ? 'update' : 'create' });
       setError(e instanceof Error ? e.message : 'Não foi possível salvar o rascunho.');
       return null;
     } finally {

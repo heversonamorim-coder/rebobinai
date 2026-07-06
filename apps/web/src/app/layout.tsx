@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Chakra_Petch, Space_Grotesk, Space_Mono } from 'next/font/google';
+import Script from 'next/script';
+import { AnalyticsProvider } from '../components/analytics-provider';
 import './globals.css';
+
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const display = Chakra_Petch({
   subsets: ['latin'],
@@ -29,7 +33,22 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <AnalyticsProvider />
+        {/* Google Analytics (GA4) — só carrega quando NEXT_PUBLIC_GA_ID existe */}
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
+            </Script>
+          </>
+        )}
+      </body>
     </html>
   );
 }
