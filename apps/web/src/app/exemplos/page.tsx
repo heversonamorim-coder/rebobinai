@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CloneButton } from '../../components/clone-button';
 import { GiftPreview } from '../../components/gift-preview';
+import { SiteFooter } from '../../components/site-footer';
+import { SiteHeader } from '../../components/site-header';
 import { getExamples } from '../../lib/api';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +17,9 @@ export default async function ExemplosPage() {
   const examples = await getExamples();
 
   return (
-    <main className="mx-auto min-h-svh w-full max-w-5xl px-5 py-10 sm:py-16">
+    <>
+      <SiteHeader variant="solid" />
+      <main className="mx-auto w-full max-w-5xl px-5 py-10 sm:py-16">
       <header className="mb-10 text-center">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">exemplos</p>
         <h1 className="mt-2 font-display text-2xl font-bold text-glow sm:text-3xl">
@@ -47,6 +51,8 @@ export default async function ExemplosPage() {
           ))}
         </div>
       )}
-    </main>
+      </main>
+      <SiteFooter />
+    </>
   );
 }
