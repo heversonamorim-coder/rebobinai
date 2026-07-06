@@ -7,6 +7,9 @@ import { AdminService } from './admin.service';
 const trackingSchema = z.object({ trackingCode: z.string().min(3).max(60) });
 type TrackingDto = z.infer<typeof trackingSchema>;
 
+const handledSchema = z.object({ handled: z.boolean() });
+type HandledDto = z.infer<typeof handledSchema>;
+
 /** Admin de vendas (Tarefa 6) — protegido por token compartilhado (AdminGuard). */
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -29,5 +32,18 @@ export class AdminController {
     @Body(new ZodValidationPipe(trackingSchema)) dto: TrackingDto,
   ) {
     return this.admin.setTracking(id, dto.trackingCode);
+  }
+
+  @Get('messages')
+  messages() {
+    return this.admin.listMessages();
+  }
+
+  @Patch('messages/:id/handled')
+  setMessageHandled(
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(handledSchema)) dto: HandledDto,
+  ) {
+    return this.admin.setMessageHandled(id, dto.handled);
   }
 }

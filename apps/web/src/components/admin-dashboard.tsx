@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import type { AdminGift, AdminOrder } from '../lib/admin-types';
+import type { AdminGift, AdminMessage, AdminOrder } from '../lib/admin-types';
 import { formatBRL } from '../lib/plans';
 
 const STATUS_LABEL: Record<AdminOrder['status'], string> = {
@@ -34,15 +34,18 @@ function fmtDate(iso: string | null): string {
 export function AdminDashboard({
   orders: initial,
   gifts = [],
+  messages = [],
   error = null,
 }: {
   orders: AdminOrder[];
   gifts?: AdminGift[];
+  messages?: AdminMessage[];
   error?: string | null;
 }) {
   const router = useRouter();
   const [orders, setOrders] = useState(initial);
-  const [tab, setTab] = useState<'vendas' | 'rebobinadas'>('vendas');
+  const [tab, setTab] = useState<'vendas' | 'rebobinadas' | 'mensagens'>('vendas');
+  const unread = messages.filter((m) => !m.handled).length;
 
   const stats = useMemo(() => {
     const paid = orders.filter((o) => o.status === 'paid');
@@ -86,23 +89,34 @@ export function AdminDashboard({
         </p>
       )}
 
-      {/* Abas: vendas (pedidos) e rebobinadas (todas as criadas) */}
-      <div className="mb-6 flex gap-2">
-        {(['vendas', 'rebobinadas'] as const).map((t) => (
+      {/* Abas: vendas (pedidos), rebobinadas (criadas) e mensagens (contato) */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {(['vendas', 'rebobinadas', 'mensagens'] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] ${
+            className={`flex items-center gap-2 rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] ${
               tab === t ? 'border-cyan text-cyan' : 'border-[var(--line)] text-dim hover:text-glow'
             }`}
           >
-            {t === 'vendas' ? `vendas · ${orders.length}` : `rebobinadas · ${gifts.length}`}
+            {t === 'vendas' && `vendas · ${orders.length}`}
+            {t === 'rebobinadas' && `rebobinadas · ${gifts.length}`}
+            {t === 'mensagens' && (
+              <>
+                mensagens · {messages.length}
+                {unread > 0 && (
+                  <span className="rounded-full bg-magenta px-1.5 py-0.5 text-[0.6rem] leading-none text-tape">
+                    {unread}
+                  </span>
+                )}
+              </>
+            )}
           </button>
         ))}
       </div>
 
-      {tab === 'vendas' ? (
+      {tab === 'vendas' && (
         <>
           <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard label="pedidos" value={String(stats.total)} />
@@ -123,9 +137,11 @@ export function AdminDashboard({
             </div>
           )}
         </>
-      ) : (
-        <GiftsList gifts={gifts} />
       )}
+
+      {tab === 'rebobinadas' && <GiftsList gifts={gifts} />}
+
+      {tab === 'mensagens' && <MessagesList messages={messages} />}
     </main>
   );
 }
@@ -178,6 +194,78 @@ function GiftsList({ gifts }: { gifts: AdminGift[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function MessagesList({ messages: initial }: { messages: AdminMessage[] }) {
+  const [messages, setMessages] = useState(initial);
+
+  async function toggle(id: string, handled: boolean) {
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, handled } : m)));
+    try {
+      const res = await fetch(`/api/admin/messages/${id}/handled`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ handled }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // reverte se a API falhar
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, handled: !handled } : m)));
+    }
+  }
+
+  if (messages.length === 0) {
+    return (
+      <p className="rounded-lg border border-[var(--line)] bg-panel/40 px-4 py-8 text-center text-dim">
+        Nenhuma mensagem ainda.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {messages.map((m) => (
+        <div
+          key={m.id}
+          className={`rounded-xl border bg-panel/40 p-4 ${
+            m.handled ? 'border-[var(--line)] opacity-60' : 'border-cyan/40'
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-display text-glow">{m.name}</span>
+            <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim">
+              {fmtDate(m.createdAt)}
+            </span>
+          </div>
+          <a
+            href={`mailto:${m.email}`}
+            className="mt-1 block font-mono text-[0.7rem] text-cyan hover:underline"
+          >
+            {m.email}
+          </a>
+          <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-glow/90">{m.message}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => toggle(m.id, !m.handled)}
+              className={`rounded-lg border px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-[0.2em] transition ${
+                m.handled
+                  ? 'border-[var(--line)] text-dim hover:text-glow'
+                  : 'border-cyan text-cyan hover:bg-cyan hover:text-tape'
+              }`}
+            >
+              {m.handled ? '↩ reabrir' : '✓ marcar tratada'}
+            </button>
+            <a
+              href={`mailto:${m.email}?subject=${encodeURIComponent('Rebobinaí ◄◄ — sua mensagem')}`}
+              className="font-mono text-[0.65rem] uppercase tracking-[0.2em] text-dim transition hover:text-cyan"
+            >
+              responder ►
+            </a>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

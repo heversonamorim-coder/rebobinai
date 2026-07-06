@@ -32,3 +32,13 @@ export interface AdminGift {
   createdAt: string;
   paidAt: string | null;
 }
+
+/** Mensagem do "fale conosco" (rodapé), lida no admin (Tarefa 2). */
+export interface AdminMessage {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  handled: boolean;
+  createdAt: string;
+}

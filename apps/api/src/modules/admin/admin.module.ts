@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ContactModule } from '../contact/contact.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AdminController } from './admin.controller';
 import { AdminGuard } from './admin.guard';
@@ -6,11 +7,12 @@ import { AdminService } from './admin.service';
 
 /**
  * Admin de vendas (Tarefa 6). Camada de relatório/fulfillment: lê pedidos e
- * grava rastreio, disparando o e-mail via NotificationsService. PrismaService
- * vem do módulo global. Protegido por token (AdminGuard).
+ * grava rastreio, disparando o e-mail via NotificationsService. Lê também as
+ * mensagens do "fale conosco" via ContactService. PrismaService vem do módulo
+ * global. Protegido por token (AdminGuard).
  */
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, ContactModule],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],
 })

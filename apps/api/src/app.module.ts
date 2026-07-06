@@ -14,6 +14,7 @@ import { MediaModule } from './modules/media/media.module';
 import { GalleryModule } from './modules/gallery/gallery.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AdminModule } from './modules/admin/admin.module';
     MediaModule,
     GalleryModule,
     NotificationsModule,
+    ContactModule,
     AdminModule,
   ],
   controllers: [HealthController],

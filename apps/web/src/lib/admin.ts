@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import type { AdminGift, AdminOrder } from './admin-types';
+import type { AdminGift, AdminMessage, AdminOrder } from './admin-types';
 
 /**
  * Helpers de servidor do admin (Tarefa 6). O navegador nunca vê as credenciais
@@ -64,6 +64,35 @@ export async function fetchAdminGifts(): Promise<AdminGift[]> {
   });
   if (!res.ok) throw new Error(`Falha ao listar rebobinadas na API (${res.status}) — confira API_URL e ADMIN_API_TOKEN.`);
   return res.json() as Promise<AdminGift[]>;
+}
+
+/** Lista as mensagens do "fale conosco" (server-side, autenticada por token). */
+export async function fetchAdminMessages(): Promise<AdminMessage[]> {
+  const token = sessionSecret();
+  if (!token) throw new Error('ADMIN_API_TOKEN não configurado no site.');
+  const res = await fetch(`${apiBase()}/admin/messages`, {
+    headers: { 'x-admin-token': token },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Falha ao listar mensagens na API (${res.status}) — confira API_URL e ADMIN_API_TOKEN.`);
+  return res.json() as Promise<AdminMessage[]>;
+}
+
+/** Marca/desmarca uma mensagem do contato como tratada (server-side). */
+export async function setMessageHandled(
+  id: string,
+  handled: boolean,
+): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const token = sessionSecret();
+  if (!token) return { ok: false, status: 401, body: { message: 'Admin não configurado.' } };
+  const res = await fetch(`${apiBase()}/admin/messages/${encodeURIComponent(id)}/handled`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', 'x-admin-token': token },
+    body: JSON.stringify({ handled }),
+    cache: 'no-store',
+  });
+  const body = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, body };
 }
 
 /** Grava o código de rastreio de um pedido (server-side). */

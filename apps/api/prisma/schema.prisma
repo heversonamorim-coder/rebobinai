@@ -173,3 +173,20 @@ model Example {
 
   @@index([active, sortOrder])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: contact (dono da tabela ContactMessage)
+// "Fale conosco" do rodapé: mensagens do público ficam salvas e são lidas no
+// admin. Sem PII sensível além de nome/e-mail informados pelo próprio cliente.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  handled   Boolean  @default(false) // marcado como tratado no admin
+  createdAt DateTime @default(now())
+
+  @@index([handled, createdAt])
+}

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '../../infra/prisma/prisma.service';
+import { ContactService } from '../contact/contact.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { getProduct } from '../payments/products';
 
@@ -18,7 +19,18 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
+    private readonly contact: ContactService,
   ) {}
+
+  /** Mensagens do "fale conosco" (rodapé), mais recentes primeiro. */
+  listMessages() {
+    return this.contact.list();
+  }
+
+  /** Marca/desmarca uma mensagem como tratada. */
+  setMessageHandled(id: string, handled: boolean) {
+    return this.contact.setHandled(id, handled);
+  }
 
   /** Lista as rebobinadas (gifts) criadas, mais recentes primeiro. */
   async listGifts() {

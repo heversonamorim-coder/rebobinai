@@ -252,6 +252,20 @@ export async function getPlans(): Promise<Plan[]> {
   }
 }
 
+/** "Fale conosco" (rodapé) — grava a mensagem pra leitura no admin. */
+export interface ContactInput {
+  name: string;
+  email: string;
+  message: string;
+}
+
+export function sendContactMessage(input: ContactInput): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/contact', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 /** Leitura pública por slug (SSR de /p/:slug). Retorna null quando não existe. */
 export async function getPublicGift(slug: string): Promise<PublicGift | null> {
   try {
