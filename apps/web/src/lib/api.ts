@@ -207,6 +207,12 @@ export async function getExamples(): Promise<Example[]> {
   }
 }
 
+/** Um exemplo da galeria pelo seoSlug (prévia em stories /exemplos/:seoSlug). */
+export async function getExampleBySeoSlug(seoSlug: string): Promise<Example | null> {
+  const all = await getExamples();
+  return all.find((e) => e.seoSlug === seoSlug) ?? null;
+}
+
 /** Clona um exemplo num rascunho novo e devolve o presente (com editToken). */
 export function cloneExample(id: string): Promise<Gift> {
   return request<Gift>(`/examples/${id}/clone`, { method: 'POST' });
