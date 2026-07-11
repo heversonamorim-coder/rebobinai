@@ -45,7 +45,7 @@ export default async function ExemplosPage() {
         <div className="grid gap-8 md:grid-cols-2">
           {examples.map((ex) => (
             <div key={ex.id} className="flex flex-col gap-4">
-              <GiftPreview payload={ex.payload} occasion={ex.occasion} />
+              <GiftPreview payload={ex.payload} occasion={ex.occasion} assets={ex.payload.assets} />
               <CloneButton exampleId={ex.id} />
             </div>
           ))}
