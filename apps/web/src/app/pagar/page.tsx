@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Lightbox } from '../../components/lightbox';
 import { ShareTools } from '../../components/share-tools';
 import { StoriesViewer } from '../../components/stories-viewer';
 import {
@@ -52,6 +53,8 @@ export default function PagarPage() {
   const [size, setSize] = useState<ShirtSize | ''>('');
   const [photoAssetId, setPhotoAssetId] = useState<string>('');
   const [availability, setAvailability] = useState<Partial<Record<ProductKey, boolean>>>({});
+  // Imagem do produto ampliada (lupa) — o cliente vê como vai ficar.
+  const [zoomImage, setZoomImage] = useState<{ url: string; alt: string } | null>(null);
   const [shipping, setShipping] = useState<Shipping>(emptyShipping());
   const [freight, setFreight] = useState<FreightQuote | null>(null);
   const [freightErr, setFreightErr] = useState<string | null>(null);
@@ -329,7 +332,12 @@ export default function PagarPage() {
                               : 'border-[var(--line)] bg-panel/40'
                         }`}
                       >
-                        <ProductThumb src={p.image} emoji={p.emoji} alt={p.name} />
+                        <ProductThumb
+                          src={p.image}
+                          emoji={p.emoji}
+                          alt={p.name}
+                          onZoom={(url, alt) => setZoomImage({ url, alt })}
+                        />
                         <span className="min-w-0">
                           <span className="block font-display text-glow">{p.name}</span>
                           {soldOut ? (
@@ -527,6 +535,15 @@ export default function PagarPage() {
             pagamento processado pelo Asaas · seus dados de cartão não ficam no Rebobinaí
           </p>
         </>
+      )}
+
+      {zoomImage && (
+        <Lightbox
+          photos={[{ id: 'produto', url: zoomImage.url }]}
+          index={0}
+          onIndex={() => {}}
+          onClose={() => setZoomImage(null)}
+        />
       )}
     </main>
   );
