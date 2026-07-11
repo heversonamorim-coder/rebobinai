@@ -42,6 +42,13 @@ export interface GiftPayload {
   astro?: { date?: string };
   theme?: string;
   spotifyTrackUrl?: string;
+  /**
+   * Fotos embutidas — usado pelos exemplos da galeria (seed F2-5) para
+   * carregar as imagens do R2 direto no payload, já que Example não tem
+   * relação de assets própria. Nos presentes reais, as fotos vêm de
+   * Gift.assets (não daqui).
+   */
+  assets?: GiftAsset[];
   [k: string]: unknown;
 }
 
