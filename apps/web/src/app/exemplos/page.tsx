@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CloneButton } from '../../components/clone-button';
-import { GiftPreview } from '../../components/gift-preview';
+import { ExampleCard } from '../../components/example-card';
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { getExamples } from '../../lib/api';
@@ -26,8 +26,9 @@ export default async function ExemplosPage() {
           Comece de uma rebobinada pronta
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm text-dim">
-          Escolha um exemplo, clique em <b className="text-glow">usar como base</b> e ajuste do seu
-          jeito. Sem folha em branco.
+          Toque em um exemplo pra ver a rebobinada <b className="text-glow">exatamente como quem
+          recebe o link vê</b>. Curtiu? Clique em <b className="text-glow">usar como base</b> e ajuste
+          do seu jeito.
         </p>
       </header>
 
@@ -42,10 +43,10 @@ export default async function ExemplosPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-8 md:grid-cols-2">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {examples.map((ex) => (
             <div key={ex.id} className="flex flex-col gap-4">
-              <GiftPreview payload={ex.payload} occasion={ex.occasion} assets={ex.payload.assets} />
+              <ExampleCard seoSlug={ex.seoSlug} payload={ex.payload} />
               <CloneButton exampleId={ex.id} />
             </div>
           ))}
