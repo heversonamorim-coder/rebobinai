@@ -1,11 +1,17 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createHash } from 'node:crypto';
+import { GiftService } from '../gift/gift.service';
+import { brDay } from '../gift/geo';
+import { AiUsageRepository } from './ai-usage.repository';
 import { aiDraftSchema } from './dto/ai.schemas';
 
 const OCCASIONS = ['namorados', 'conjuge', 'pais', 'avos', 'casamento', 'aniversario'];
@@ -39,10 +45,17 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly client?: Anthropic;
   private readonly model: string;
+  /** Cota grátis por IP/dia (freemium anti-abuso). Configurável por env. */
+  private readonly freeDailyLimit: number;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly usage: AiUsageRepository,
+    private readonly gifts: GiftService,
+  ) {
     const apiKey = config.get<string>('ANTHROPIC_API_KEY');
     this.model = config.get<string>('ANTHROPIC_MODEL') ?? 'claude-opus-4-8';
+    this.freeDailyLimit = Number(config.get<string>('AI_FREE_DAILY_LIMIT') ?? 3);
     if (apiKey) this.client = new Anthropic({ apiKey });
   }
 
@@ -50,16 +63,48 @@ export class AiService {
     return Boolean(this.client);
   }
 
-  /** Gera o rascunho e devolve { occasion, payload } pronto pro editor. */
-  async draftFromText(text: string) {
+  /**
+   * Gera o rascunho e devolve { occasion, payload, remaining }. Cota anti-abuso
+   * por IP/dia; ao estourar, 429 com upsell (não gera). Quando vem giftMeta,
+   * marca o rascunho como composedWithAi (trava o Digital no checkout).
+   */
+  async draftFromText(
+    text: string,
+    ip: string | undefined,
+    giftMeta?: { giftId: string; editToken: string },
+  ) {
     if (!this.client) {
       throw new ServiceUnavailableException('IA indisponível: ANTHROPIC_API_KEY não configurada.');
+    }
+
+    // Cota grátis por IP (sem login, o IP é a âncora possível). Servidor é a
+    // fonte de verdade — a "válvula de escape" do checkout não reseta isto.
+    const ipHash = createHash('sha256').update(ip ?? 'unknown').digest('hex');
+    const day = brDay();
+    const used = await this.usage.count(ipHash, day);
+    if (used >= this.freeDailyLimit) {
+      throw new HttpException(
+        {
+          code: 'ai_quota_exceeded',
+          remaining: 0,
+          message: `Você usou suas ${this.freeDailyLimit} gerações grátis de IA de hoje. Dá pra seguir montando na mão — ou a IA ilimitada faz parte dos planos Pra Sempre e +Lembrança Física.`,
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     let draft = this.tryParse(await this.callModel(text, false));
     if (!draft) draft = this.tryParse(await this.callModel(text, true));
     if (!draft) {
       throw new UnprocessableEntityException('Não consegui montar o rascunho a partir do texto.');
+    }
+
+    // Só conta e marca depois de uma geração de sucesso.
+    await this.usage.increment(ipHash, day);
+    if (giftMeta) {
+      await this.gifts
+        .markComposedWithAi(giftMeta.giftId, giftMeta.editToken)
+        .catch((e) => this.logger.warn(`markComposedWithAi falhou: ${e instanceof Error ? e.message : e}`));
     }
 
     // Mapeia os campos "planos" da IA pro formato do payload: startDate vira o
@@ -70,7 +115,7 @@ export class AiService {
       ...(startDate ? { counter: { targetDate: startDate } } : {}),
       ...(closingMessage ? { closingMessage } : {}),
     };
-    return { occasion, payload };
+    return { occasion, payload, remaining: Math.max(0, this.freeDailyLimit - used - 1) };
   }
 
   private async callModel(text: string, stricter: boolean): Promise<string> {

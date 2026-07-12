@@ -34,6 +34,18 @@ export class GiftService {
   }
 
   /**
+   * Marca o rascunho como "montado com IA" (serviço exportado, chamado pelo
+   * módulo ai). Trava o Digital no checkout. Idempotente e valida o editToken.
+   */
+  async markComposedWithAi(id: string, editToken: string) {
+    const gift = await this.repo.findById(id);
+    if (!gift) throw new NotFoundException('Presente não encontrado');
+    this.assertEditor(gift.editToken, editToken);
+    if (gift.composedWithAi) return;
+    await this.repo.update(id, { composedWithAi: true });
+  }
+
+  /**
    * Presente público por slug (página /p/:slug). Só existe quando pago — o slug
    * só é gerado ao pagar (anti-abuso). Registra a view (contador ao vivo) e
    * devolve a projeção pública, sem o editToken.
