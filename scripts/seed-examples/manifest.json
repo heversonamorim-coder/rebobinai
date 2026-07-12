@@ -1,0 +1,281 @@
+{
+  "model": "gemini-3.1-flash-image",
+  "aspectRatio": "3:4",
+  "imageSize": "1K",
+  "globalStyle": "Candid amateur smartphone photo, warm natural light, Brazilian setting and Brazilian-looking people, subtle film grain, slightly imperfect framing like a real family album, 3:4 portrait, no text or watermarks. Keep the SAME characters consistent across all photos of this set.",
+  "examples": [
+    {
+      "slug": "namoro-1095-dias",
+      "heading": "1.1 \"Nossos 1.095 dias de nós\" — 3 anos, distância vencida",
+      "characters": "4 fotos — casal jovem ~25 anos, ela cabelo cacheado castanho, ele barba curta",
+      "prompts": [
+        "Young Brazilian couple saying goodbye at a bus station at night, tight hug, intercity bus in background, fluorescent station light.",
+        "Same couple cooking in a tiny apartment kitchen, laughing, chocolate brigadeiro pot on the stove, spoons in hand.",
+        "Same couple carrying moving boxes up an apartment staircase, sweaty and happy, one box labeled \"LIVROS\".",
+        "Same couple on a worn sofa under a blanket, watching TV, her legs over his lap, cozy evening lamp light."
+      ]
+    },
+    {
+      "slug": "namoro-do-match",
+      "heading": "1.2 \"Do match ao pra sempre\" — casal do aplicativo",
+      "characters": "4 fotos — ela loira mel, óculos; ele moreno alto",
+      "prompts": [
+        "Brazilian couple at a burger restaurant on a first date, she smiles holding a huge burger, string lights, slightly nervous energy.",
+        "Same couple holding each other's phones face-to-face, playful ceremony vibe, deleting apps, café table with two coffees.",
+        "Same couple sitting on a highway guardrail next to a car with a flat tire, green mountain road, golden hour, both laughing.",
+        "Same couple selfie at home, faces squeezed together, TV glow behind, genuine laughter."
+      ]
+    },
+    {
+      "slug": "namoro-primeiro-ano",
+      "heading": "1.3 \"365 dias do nosso primeiro beijo\" — primeiro aniversário",
+      "characters": "5 fotos — casal ~22 anos, ela franja, ele cabelo encaracolado",
+      "prompts": [
+        "Young Brazilian couple almost kissing at a house party, fairy lights, friends blurred in background, caught-moment feel.",
+        "Same couple at a breakfast table with visibly burnt toast, he shrugs apologetically, she laughs, morning window light.",
+        "Same couple running on a beach in the rain sharing one towel overhead, grey sky, pure joy.",
+        "Same couple at a family lunch, an older woman (her mother) hugging him warmly, crowded happy table.",
+        "Same couple close-up selfie, foreheads touching, golden hour."
+      ]
+    },
+    {
+      "slug": "namoro-a-gente-e-a-nina",
+      "heading": "1.4 \"A gente + a Nina\" — o casal que virou família de pet",
+      "characters": "4 fotos — casal ~28 anos + vira-lata caramelo",
+      "prompts": [
+        "Brazilian couple at an animal shelter meeting a caramel-colored mutt puppy for the first time, kneeling, puppy licking her face.",
+        "Same caramel dog, slightly older, sitting guiltily next to a destroyed sneaker, the couple in background trying not to laugh.",
+        "Same couple walking the caramel dog at sunset on a tree-lined street, holding hands, leash in his other hand.",
+        "Same couple asleep in bed on a Sunday morning with the caramel dog sprawled between them taking all the space."
+      ]
+    },
+    {
+      "slug": "casamento-bodas-prata",
+      "heading": "2.1 \"25 anos e a louça de domingo\" — bodas de prata (feito pelos filhos)",
+      "characters": "5 fotos — casal ~50 anos; nas fotos antigas, ~25 anos",
+      "prompts": [
+        "2000s-style wedding photo of a young Brazilian couple in a simple church hall, grainy analog film look, modest cake, flash photography aesthetic.",
+        "Same couple aged around 35 with two small kids on a sofa, 2010s compact-camera look, slightly overexposed.",
+        "Same couple, aged 50, dancing in the kitchen, she in an apron, both laughing, Sunday lunch pots on the stove.",
+        "Same older couple on a beach boardwalk, selfie taken at wrong angle (classic parents selfie), genuine smiles.",
+        "Same older couple sitting at a family lunch table with two adult kids, toasting with glasses, warm afternoon light."
+      ]
+    },
+    {
+      "slug": "casamento-primeiro-ano",
+      "heading": "2.2 \"Nosso primeiro ano de alianças\" — 1º aniversário de casamento",
+      "characters": "5 fotos — casal ~30 anos, casamento ao ar livre",
+      "prompts": [
+        "Brazilian couple at an outdoor garden wedding altar exchanging vows, he tearing up, string lights and green foliage.",
+        "Same couple doing a slightly clumsy first dance, guests laughing warmly with them, fairy lights bokeh.",
+        "Same couple exhausted but laughing at an airport gate at night, luggage around, boarding passes in hand.",
+        "Same couple decorating a fridge with travel magnets in a new apartment kitchen, moving boxes visible.",
+        "Same couple recreating their altar pose at home, casual clothes, one year later, holding a \"365\" handwritten sign."
+      ]
+    },
+    {
+      "slug": "casamento-de-2-viramos-4",
+      "heading": "2.3 \"De 2 viramos 4\" — 10 anos, com filhos",
+      "characters": "5 fotos — casal ~38 anos, menino 7, menina 4",
+      "prompts": [
+        "Brazilian couple wedding photo in a small backyard party, 2016 style, simple decoration, both mid-laugh.",
+        "Same woman holding a positive pregnancy test, husband screaming with joy in a small bathroom doorway, candid.",
+        "Same couple exhausted on a sofa, each holding a sleeping baby/toddler, toys everywhere, 3am lamp light, tired smiles.",
+        "Family of four at a chaotic breakfast table, a parrot perched on the chair, kids mid-mess, parents mid-laugh.",
+        "Same couple slow dancing in the living room at night, kids asleep on the sofa behind them, TV static glow."
+      ]
+    },
+    {
+      "slug": "casamento-bodas-ouro",
+      "heading": "2.4 \"50 anos de nós\" — bodas de ouro (feito pelos netos)",
+      "characters": "5 fotos — casal ~75 anos; foto 1 estilo anos 70",
+      "prompts": [
+        "1970s black-and-white photo of a young Brazilian couple dancing at a small town ball, accordion player in background, vintage film grain.",
+        "Elderly Brazilian couple, mid-70s, sitting on a porch, he peels an orange and hands her a slice, morning light.",
+        "Same elderly couple surrounded by a large multi-generation family at a long lunch table, golden hour backyard.",
+        "Close-up of two aged hands with worn gold wedding bands, holding, over a crocheted tablecloth.",
+        "Same elderly couple laughing while looking at an old photo album, a dried rose kept between the pages."
+      ]
+    },
+    {
+      "slug": "pais-homem-do-churrasco",
+      "heading": "3.1 \"O homem do churrasco\" — filha adulta para o pai",
+      "characters": "4 fotos — pai ~55 anos grisalho, filha ~28",
+      "prompts": [
+        "Brazilian dad in his 50s teaching a little girl to ride a bike on a residential street, 90s film photo look, him running behind.",
+        "Same dad at a backyard barbecue grill, tongs in hand, apron, adult daughter stealing a piece of meat, both laughing.",
+        "Same dad awkwardly holding a phone too close to his face on a video call, half his forehead in frame, endearing.",
+        "Adult daughter and dad leaning on an open car hood, he points at the engine explaining, she watches him instead, warm smile."
+      ]
+    },
+    {
+      "slug": "pais-primeiro-dia",
+      "heading": "3.2 \"Seu primeiro Dia dos Pais\" — da esposa para o marido",
+      "characters": "5 fotos — pai ~32 anos, bebê ~7 meses",
+      "prompts": [
+        "Brazilian man crying with joy holding a newborn in a maternity ward, hospital bracelet visible, raw emotional moment.",
+        "Same man mid-diaper-change looking overwhelmed but determined, baby supplies scattered, morning light.",
+        "Same man and baby asleep on a sofa in identical positions, mouths open, shot from above.",
+        "Same man giving the baby a bath in a small tub, his shirt soaked, baby splashing, both delighted.",
+        "Same man lifting the baby overhead in a sunlit living room, baby laughing, dust particles in golden light."
+      ]
+    },
+    {
+      "slug": "pais-tecnico-de-todas",
+      "heading": "3.3 \"Meu técnico de todas as horas\" — filho para o pai (futebol)",
+      "characters": "4 fotos — pai ~58, filho dos 8 aos 30",
+      "prompts": [
+        "Brazilian father celebrating wildly as a small boy scores a goal against a backyard gate, arms raised, 2000s film look.",
+        "Same father in work uniform watching a boys' football practice from behind a wire fence at dusk, tired but present.",
+        "Father sitting at a hospital bedside of a young man with a leg brace, hand on his shoulder, quiet strength.",
+        "Adult son and older father on a sofa in matching football jerseys, mid-celebration of a goal on TV, popcorn flying."
+      ]
+    },
+    {
+      "slug": "pais-pai-e-quem-fica",
+      "heading": "3.4 \"Pai é quem fica\" — para o padrasto/pai de criação",
+      "characters": "4 fotos — padrasto ~48, enteado dos 8 aos 22",
+      "prompts": [
+        "Brazilian man kneeling to give a wrapped gift to a shy 8-year-old boy at a small birthday party, warm cautious first-meeting energy.",
+        "Same man making pancakes on a Saturday morning, teenage boy at the counter, comfortable domestic scene.",
+        "Same man in a driving lesson passenger seat, calm and encouraging, young man at the wheel, both relaxed.",
+        "Graduation ceremony: young man in cap and gown hugging the man tightly, emotional, proud tears."
+      ]
+    },
+    {
+      "slug": "maes-ja-comeu",
+      "heading": "4.1 \"A mulher do 'já comeu?'\" — filha adulta para a mãe",
+      "characters": "4 fotos — mãe ~60, filha ~32",
+      "prompts": [
+        "Brazilian woman in her 50s talking on an old kitchen phone, wall clock showing 12:30, pots on the stove, warm kitchen light.",
+        "Same woman on a night bus holding an ice cream container wrapped in a plastic bag on her lap, determined tenderness.",
+        "Vintage sewing machine by a window with a graduation photo frame next to it, symbolic still life, dust in light.",
+        "Adult daughter and mother cooking together in the same kitchen, daughter now stirring the pot, mother laughing, role reversal."
+      ]
+    },
+    {
+      "slug": "maes-primeiro-dia",
+      "heading": "4.2 \"Seu primeiro Dia das Mães\" — do marido para a esposa",
+      "characters": "5 fotos — mãe ~30, bebê menina ~8 meses",
+      "prompts": [
+        "Brazilian woman holding a newborn for the very first time in a hospital bed, trembling careful hands, overwhelming love in her face.",
+        "Mother and baby asleep together in an armchair at 3am, nightlight glow, baby bottle on side table.",
+        "Same mother applying sunscreen to a baby by a sunny window, morning sun patch on the floor, gentle scene.",
+        "Baby laughing for the first time at her mother making a silly face, mid-laugh burst, kitchen background.",
+        "Close-up of mother and baby daughter forehead to forehead, eyes locked, soft window light."
+      ]
+    },
+    {
+      "slug": "maes-dose-dupla-de-longe",
+      "heading": "4.3 \"Mãe em dose dupla\" — para a mãe que morou longe e nunca saiu de perto",
+      "characters": "4 fotos — mãe ~58, filho ~26",
+      "prompts": [
+        "Brazilian mother hugging her adult son tightly at a bus station, luggage at their feet, her eyes closed hard, emotional farewell.",
+        "Older woman at a kitchen table recording a long WhatsApp audio, phone close to her mouth, gesturing as she speaks, endearing.",
+        "Open suitcase full of frozen food containers wrapped in plastic bags, labeled with masking tape, one clothing item squeezed in the corner.",
+        "Young man in a small apartment cooking while watching a video call propped against the wall, his mother on screen instructing."
+      ]
+    },
+    {
+      "slug": "maes-rainha-da-casa",
+      "heading": "4.4 \"As rainhas da casa\" — filhos adultos juntos para a mãe viúva",
+      "characters": "4 fotos — mãe dos 40 aos 60, 3 filhos",
+      "prompts": [
+        "Brazilian woman in work uniform packing lunch boxes at dawn in a modest kitchen, three school backpacks lined up by the door, 2000s look.",
+        "Slightly blurry, shaky photo of a graduation: mother crying hugging a graduate, motion blur authentic, flash photo.",
+        "Woman in her 50s seeing the ocean for the first time, arms open, laughing and crying, adult children behind her filming.",
+        "Big family Sunday lunch, older woman at the head of a crowded table, grandchildren around, abundance and joy."
+      ]
+    },
+    {
+      "slug": "avos-cheiro-de-bolo",
+      "heading": "5.1 \"A casa da vó tem cheiro de bolo\" — neta para avó",
+      "characters": "4 fotos — avó ~78, neta dos 6 aos 28",
+      "prompts": [
+        "Brazilian grandmother teaching a small girl to stir cake batter in an old tiled kitchen, flour on the girl's nose, 90s film look.",
+        "Grandmother and child having afternoon coffee with crackers at a small table with floral tablecloth, 3pm light through lace curtains.",
+        "A margarine pot full of coins and small bills, kept inside a cupboard, nostalgic still life.",
+        "Adult granddaughter hugging the elderly grandmother from behind in the same kitchen, cake on the counter, both laughing."
+      ]
+    },
+    {
+      "slug": "avos-historias-do-vo",
+      "heading": "5.2 \"As histórias do vô (todas as 7)\" — netos para avô",
+      "characters": "4 fotos — avô ~80, netos variados",
+      "prompts": [
+        "Elderly Brazilian man on a small fishing boat at dawn, a boy asleep wrapped in his jacket beside him, misty lake, tender.",
+        "Same elderly man gesturing dramatically with open arms telling a story at a dinner table, grandchildren laughing, one rolling eyes fondly.",
+        "Old battery radio on a wooden shelf next to a faded football club pennant, nostalgic still life, afternoon light.",
+        "Same elderly man fixing an old bicycle with a teenage grandson handing him tools, garage clutter, patient teaching moment."
+      ]
+    },
+    {
+      "slug": "avos-quatro-geracoes",
+      "heading": "5.3 \"Quatro gerações de nós\" — para a bisavó",
+      "characters": "4 fotos — bisavó ~94 + família",
+      "prompts": [
+        "Sepia 1950s photo of a young Brazilian woman with children in front of a simple rural house, dirt yard, dignified strong posture.",
+        "Elderly woman in her 90s wearing a wool cap, holding a baby, summer light, other family members around, warm chaos.",
+        "Four generations in one frame: great-grandmother seated, grandmother, mother and small child stacked hands, close-up.",
+        "Huge Sunday lunch, very long improvised table extending into the yard, tiny elderly woman at the head laughing, 30+ people."
+      ]
+    },
+    {
+      "slug": "avos-primeira-viagem",
+      "heading": "5.4 \"O estágio mais feliz do mundo\" — para os avós de primeira viagem",
+      "characters": "5 fotos — avós ~62 anos, bebê menina",
+      "prompts": [
+        "Brazilian grandparents at a maternity ward gently arguing over who holds the newborn, both reaching, playful tension, joy.",
+        "Grandfather assembling a crib surrounded by leftover screws and an ignored manual, focused pride, comedy of the scene.",
+        "Grandmother surrounded by tiny baby dresses with price tags still on, caught red-handed expression, shopping bags.",
+        "Grandparents on video call both squeezing into frame to see the baby, faces too close to camera, delight.",
+        "First birthday party: baby girl smashing cake while both grandparents clap in matching party hats."
+      ]
+    },
+    {
+      "slug": "amizade-desde-a-escola",
+      "heading": "6.1 \"15 anos de melhor amiga\" — desde a escola",
+      "characters": "5 fotos — duas amigas dos 12 aos 27",
+      "prompts": [
+        "Two Brazilian schoolgirls in uniform sharing earphones at a school desk, early 2010s compact camera look, braces and laughter.",
+        "Two teenage girls crying and hugging in graduation gowns, mascara slightly smudged, celebratory chaos behind.",
+        "Two young women in pajamas eating ice cream from the pot on a sofa at 2am, one consoling the other, tissues around, tender comedy.",
+        "Bride hugging her best friend (maid of honor) mid emotional toast, guests laughing and crying, wedding reception.",
+        "Two women in their late 20s taking the same selfie pose as photo 1, sharing earphones, recreation of the first photo."
+      ]
+    },
+    {
+      "slug": "amizade-republica",
+      "heading": "6.2 \"A república que virou família\" — amigos de faculdade",
+      "characters": "4 fotos — grupo de 5 amigos, 20 aos 30 anos",
+      "prompts": [
+        "Five Brazilian college students carrying an old sofa found on the street, mid-laughter, student neighborhood, golden hour.",
+        "Same five friends around a table covered in laptops, coffee cups and instant noodles at night, exhausted and united, TCC crunch.",
+        "Same group video call screenshot aesthetic: five faces in grid layout, pajamas, one holding a cat, pandemic era warmth.",
+        "Same five friends, now late 20s, recreating the sofa-carrying pose at a yearly reunion barbecue, same positions, older and happy."
+      ]
+    },
+    {
+      "slug": "amizade-um-oceano",
+      "heading": "6.3 \"Um oceano e nenhuma distância\" — amiga que mudou de país",
+      "characters": "4 fotos — duas amigas ~35 anos",
+      "prompts": [
+        "Two Brazilian women in their 20s laughing while tugging the same ugly patterned blouse at a store sale rack, 2008 look, candid.",
+        "Farewell party: one woman mid-speech crying dramatically while the other laughs and cries, \"BOA VIAGEM\" banner, fairy lights.",
+        "Split-scene style photo: woman on a video call at 4am in pajamas screaming with joy, city lights outside her window.",
+        "Airport arrivals gate: two women running into a hug, luggage abandoned behind, pure reunion energy."
+      ]
+    },
+    {
+      "slug": "amizade-irmaos-da-vida",
+      "heading": "6.4 \"Irmãos que a vida escolheu\" — amigos de infância, padrinhos um do outro",
+      "characters": "4 fotos — dois amigos dos 8 aos 38",
+      "prompts": [
+        "Two Brazilian boys around 8 years old on a dead-end street with bikes and a football, one pointing at a broken window, 90s film look, caught in the act.",
+        "Two teenagers playing video games on a tube TV, one controller between them, fan blowing, 2000s bedroom with posters.",
+        "Two grown men in suits laughing hard at a wedding, groom and best man, champagne glasses, genuine brotherhood.",
+        "Two men in their late 30s playing dominoes at a bar table, beers, mid-argument over the game, decades of intimacy visible."
+      ]
+    }
+  ]
+}
