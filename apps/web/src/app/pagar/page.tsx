@@ -18,7 +18,7 @@ import {
   type PixCheckoutResult,
   type PlanKeyPaid,
 } from '../../lib/api';
-import { assetUrl, loadDraftRef, type DraftRef, type Gift, type GiftAsset } from '../../lib/gift';
+import { assetUrl, clearDraftRef, loadDraftRef, type DraftRef, type Gift, type GiftAsset } from '../../lib/gift';
 import { formatBRL, PLANS_FALLBACK, priceDisplay, type Plan } from '../../lib/plans';
 import {
   emptyShipping,
@@ -55,6 +55,8 @@ export default function PagarPage() {
   const [availability, setAvailability] = useState<Partial<Record<ProductKey, boolean>>>({});
   // Imagem do produto ampliada (lupa) — o cliente vê como vai ficar.
   const [zoomImage, setZoomImage] = useState<{ url: string; alt: string } | null>(null);
+  // Presente montado com IA → Digital travado (só Pra Sempre / +Lembrança Física).
+  const [composedWithAi, setComposedWithAi] = useState(false);
   const [shipping, setShipping] = useState<Shipping>(emptyShipping());
   const [freight, setFreight] = useState<FreightQuote | null>(null);
   const [freightErr, setFreightErr] = useState<string | null>(null);
@@ -76,6 +78,11 @@ export default function PagarPage() {
     getGift(existing.id, existing.editToken)
       .then((g) => {
         setAssets(g.assets ?? []);
+        // Presente com IA não pode ir no Digital — já entra num plano com IA.
+        if (g.composedWithAi) {
+          setComposedWithAi(true);
+          setPlanKey((k) => (k === 'digital' ? 'forever' : k));
+        }
         // Já pago (voltou pra cá): mostra direto a tela de compartilhar.
         if (g.status === 'paid' && g.slug) {
           setPaidGift(g);
@@ -284,24 +291,51 @@ export default function PagarPage() {
                       ? `a partir de ${formatBRL(physicalFromPrice())}`
                       : priceDisplay(p).current;
                   const active = p.key === planKey;
+                  // Presente com IA trava o Digital (não inclui IA).
+                  const locked = composedWithAi && p.key === 'digital';
                   return (
                     <button
                       key={p.key}
                       type="button"
-                      onClick={() => setPlanKey(p.key as PlanKeyPaid)}
+                      disabled={locked}
+                      onClick={() => !locked && setPlanKey(p.key as PlanKeyPaid)}
                       className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left ${
-                        active ? 'border-magenta bg-panel' : 'border-[var(--line)] bg-panel/40'
+                        locked
+                          ? 'cursor-not-allowed border-[var(--line)] bg-panel/20 opacity-55'
+                          : active
+                            ? 'border-magenta bg-panel'
+                            : 'border-[var(--line)] bg-panel/40'
                       }`}
                     >
                       <span>
                         <span className="font-display text-glow">{p.name}</span>
-                        {p.tagline && <span className="ml-2 text-xs text-dim">{p.tagline}</span>}
+                        {locked ? (
+                          <span className="ml-2 font-mono text-[0.65rem] uppercase tracking-[0.15em] text-magenta">
+                            usa IA — indisponível
+                          </span>
+                        ) : (
+                          p.tagline && <span className="ml-2 text-xs text-dim">{p.tagline}</span>
+                        )}
                       </span>
                       <span className="shrink-0 font-display text-cyan">{priceLabel}</span>
                     </button>
                   );
                 })}
             </div>
+            {composedWithAi && (
+              <p className="mt-3 text-xs leading-relaxed text-dim">
+                Este presente foi montado com IA — disponível no <b className="text-glow">Pra Sempre</b> e no{' '}
+                <b className="text-glow">+ Lembrança Física</b>.{' '}
+                <Link
+                  href="/criar"
+                  onClick={() => clearDraftRef()}
+                  className="text-cyan underline underline-offset-2 hover:text-glow"
+                >
+                  Prefere o Digital? Recomeçar sem a IA
+                </Link>
+                .
+              </p>
+            )}
           </div>
 
           {/* Plano físico: produto + foto (caneca) + endereço + frete */}

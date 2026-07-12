@@ -248,6 +248,13 @@ export class PaymentsService {
     if (gift.status === 'paid') throw new ConflictException('Presente já foi pago.');
     const plan = await this.plans.getByKey(planKey as $Enums.PlanKey);
     if (!plan || !plan.active) throw new NotFoundException('Plano indisponível.');
+    // Presente montado com IA só pode ser vendido em plano que inclui IA — o
+    // Digital fica travado (a "válvula de escape" é recomeçar sem IA no front).
+    if (gift.composedWithAi && plan.key === 'digital') {
+      throw new BadRequestException(
+        'Este presente foi montado com IA — escolha o plano Pra Sempre ou +Lembrança Física.',
+      );
+    }
     return { gift, plan };
   }
 }

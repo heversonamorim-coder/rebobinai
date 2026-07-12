@@ -7,6 +7,7 @@ import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
 import { captureError, trackEvent } from '../../lib/analytics';
 import {
+  ApiError,
   createGift,
   draftFromText,
   getGift,
@@ -283,7 +284,7 @@ export default function CriarPage() {
 
       {step === 0 && (
         <Step title="Pra quem é o presente?" hint="Isso personaliza a rebobinada.">
-          <AiComposer onDraft={applyDraft} />
+          <AiComposer onDraft={applyDraft} ensureDraft={saveDraft} />
           <div className="mb-5">
             <label className={labelClass} htmlFor="occasion">
               Ocasião
@@ -1358,11 +1359,19 @@ function PhotoUploader({
  * monta o rascunho (título, recado, linha do tempo). É o atalho de conversão —
  * fica no topo do primeiro passo, mas é opcional (dá pra preencher na mão).
  */
-function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
+function AiComposer({
+  onDraft,
+  ensureDraft,
+}: {
+  onDraft: (result: DraftResult) => void;
+  ensureDraft: () => Promise<DraftRef | null>;
+}) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Mensagem de cota esgotada (429) — upsell, visual diferente do erro comum.
+  const [quota, setQuota] = useState<string | null>(null);
 
   async function generate() {
     if (text.trim().length < 10) {
@@ -1371,11 +1380,23 @@ function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
     }
     setLoading(true);
     setErr(null);
+    setQuota(null);
     try {
-      const result = await draftFromText(text.trim());
+      // Garante um rascunho antes de gerar — assim o servidor marca composedWithAi
+      // nesse presente (trava o Digital no checkout).
+      const ref = await ensureDraft();
+      if (!ref) {
+        setErr('Não consegui salvar o rascunho pra usar a IA. Tenta de novo.');
+        return;
+      }
+      const result = await draftFromText(text.trim(), ref);
       onDraft(result);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : 'Não consegui montar o rascunho agora.');
+      if (e instanceof ApiError && e.status === 429) {
+        setQuota(e.message);
+      } else {
+        setErr(e instanceof Error ? e.message : 'Não consegui montar o rascunho agora.');
+      }
     } finally {
       setLoading(false);
     }
@@ -1415,6 +1436,10 @@ function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
           fechar
         </button>
       </div>
+      <p className="mb-3 rounded-lg border border-cyan/25 bg-tape/40 px-3 py-2 text-[0.72rem] leading-relaxed text-dim">
+        ✨ A IA faz parte dos planos <b className="text-glow">Pra Sempre</b> e{' '}
+        <b className="text-glow">+ Lembrança Física</b>. Ao usar, seu presente segue nesses planos.
+      </p>
       <textarea
         className={`${inputClass} min-h-32 resize-y`}
         value={text}
@@ -1422,6 +1447,11 @@ function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
         placeholder="Ex.: A Marina e eu nos conhecemos em 2019 numa festa de amigos. Nosso primeiro date foi no cinema, choveu muito. Em 2021 fomos morar juntos e adotamos a Nina. Quero surpreender ela nos 4 anos de namoro…"
       />
       {err && <p className="mt-2 text-sm text-magenta">{err}</p>}
+      {quota && (
+        <div className="mt-3 rounded-lg border border-magenta/40 bg-magenta/10 px-4 py-3 text-sm text-glow">
+          {quota}
+        </div>
+      )}
       <button
         type="button"
         onClick={generate}
