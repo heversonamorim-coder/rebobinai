@@ -1439,12 +1439,20 @@ function AiComposer({ onDraft }: { onDraft: (result: DraftResult) => void }) {
 
 /** Link/QR bloqueados até o pagamento (F1-4); o CTA leva ao checkout (F1-5). */
 function LockedLink() {
+  // Host real do site — bate com a URL absoluta onde o cliente está. No SSR usa
+  // o SITE_HOST (NEXT_PUBLIC_SITE_URL / rebobinai.app) e, ao hidratar, troca pelo
+  // host atual do navegador (cobre domínio próprio, preview da Vercel, etc.).
+  const [host, setHost] = useState(SITE_HOST);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.host) setHost(window.location.host);
+  }, []);
+
   return (
     <div className="mt-6 rounded-xl border border-[var(--line)] bg-panel/50 p-5 text-center">
       <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim">
         🔒 seu link secreto
       </p>
-      <code className="mt-2 block font-mono text-lg text-dim/70">{SITE_HOST}/p/•••••</code>
+      <code className="mt-2 block font-mono text-lg text-dim/70">{host}/p/•••••</code>
       <Link
         href="/pagar"
         className="mt-4 block w-full rounded-lg bg-magenta px-6 py-3 font-display text-sm font-semibold uppercase tracking-[0.15em] text-tape transition hover:brightness-110"
