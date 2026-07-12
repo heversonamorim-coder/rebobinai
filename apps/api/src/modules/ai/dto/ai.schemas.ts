@@ -3,9 +3,6 @@ import { z } from 'zod';
 /** Entrada do compositor: um parágrafo contando a história. */
 export const draftInputSchema = z.object({
   text: z.string().min(10).max(4000),
-  // Rascunho atual (quando já existe) — pra marcar composedWithAi no servidor.
-  giftId: z.string().max(60).optional(),
-  editToken: z.string().max(60).optional(),
 });
 
 export type DraftInputDto = z.infer<typeof draftInputSchema>;

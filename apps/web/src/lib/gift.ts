@@ -86,8 +86,6 @@ export interface Gift {
   watermark: boolean;
   viewCount: number;
   editToken: string;
-  /** Usou o compositor de IA — trava o plano Digital no checkout. */
-  composedWithAi: boolean;
   assets: GiftAsset[];
   createdAt: string;
   updatedAt: string;

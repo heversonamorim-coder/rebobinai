@@ -234,32 +234,20 @@ interface AiDraftResponse {
     closingMessage?: string | null;
     timeline: { date: string | null; title: string; description: string | null }[];
   };
-  /** Gerações grátis de IA restantes hoje (freemium). */
-  remaining?: number;
 }
 
 export interface DraftResult {
   occasion?: string;
   payload: GiftPayload;
-  remaining?: number;
 }
 
-/**
- * Compositor de IA. Passa o rascunho atual (giftId/editToken) quando existe —
- * assim o servidor marca composedWithAi (trava o Digital no checkout). Estourar
- * a cota grátis vira um ApiError com status 429 (o front mostra o upsell).
- */
-export async function draftFromText(
-  text: string,
-  gift?: { id: string; editToken: string },
-): Promise<DraftResult> {
+export async function draftFromText(text: string): Promise<DraftResult> {
   const res = await request<AiDraftResponse>('/ai/draft', {
     method: 'POST',
-    body: JSON.stringify({ text, giftId: gift?.id, editToken: gift?.editToken }),
+    body: JSON.stringify({ text }),
   });
   const p = res.payload;
   return {
-    remaining: res.remaining,
     occasion: res.occasion ?? undefined,
     payload: {
       title: p.title,
