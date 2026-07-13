@@ -24,7 +24,7 @@ export default async function StatsPage({ params }: Params) {
     <main className="mx-auto min-h-svh w-full max-w-3xl px-5 py-12">
       <header className="mb-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Link href="/" aria-label="Início">
-          <Logo size="sm" static />
+          <Logo size="sm" static withMark />
         </Link>
         <Link
           href={`/p/${slug}`}

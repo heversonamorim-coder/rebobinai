@@ -44,7 +44,7 @@ export function SiteHeader({ variant = 'hero' }: { variant?: 'hero' | 'solid' })
     >
       <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
         <Link href="/" aria-label="Início" onClick={() => setOpen(false)}>
-          <Logo size="sm" static />
+          <Logo size="sm" static withMark />
         </Link>
 
         <div className="relative">
