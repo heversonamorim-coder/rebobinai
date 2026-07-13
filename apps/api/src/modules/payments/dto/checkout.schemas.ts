@@ -32,13 +32,13 @@ function validCnpj(raw: string): boolean {
   if (/^(\d)\1+$/.test(d)) return false;
   const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
   let sum = 0;
-  for (let i = 0; i < 12; i++) sum += Number(d[i]) * w1[i];
+  for (let i = 0; i < 12; i++) sum += Number(d[i]) * (w1[i] as number);
   const r1 = sum % 11;
   const dig1 = r1 < 2 ? 0 : 11 - r1;
   if (Number(d[12]) !== dig1) return false;
   const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
   sum = 0;
-  for (let i = 0; i < 13; i++) sum += Number(d[i]) * w2[i];
+  for (let i = 0; i < 13; i++) sum += Number(d[i]) * (w2[i] as number);
   const r2 = sum % 11;
   const dig2 = r2 < 2 ? 0 : 11 - r2;
   return Number(d[13]) === dig2;
