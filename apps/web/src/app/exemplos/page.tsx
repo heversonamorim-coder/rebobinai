@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CloneButton } from '../../components/clone-button';
 import { ExampleCard } from '../../components/example-card';
+import { ExampleFilter, OCCASION_FILTERS } from '../../components/example-filter';
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { getExamples } from '../../lib/api';
@@ -13,8 +14,17 @@ export const metadata: Metadata = {
   description: 'Inspire-se em rebobinadas prontas por ocasião e use como base — seu presente em 1 clique.',
 };
 
-export default async function ExemplosPage() {
-  const examples = await getExamples();
+export default async function ExemplosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ocasiao?: string }>;
+}) {
+  const [examples, { ocasiao }] = await Promise.all([getExamples(), searchParams]);
+
+  // Só aceita ocasiões conhecidas; valor inválido cai em "todos".
+  const active =
+    ocasiao && OCCASION_FILTERS.some((o) => o.slug === ocasiao) ? ocasiao : null;
+  const visible = active ? examples.filter((ex) => ex.occasion === active) : examples;
 
   return (
     <>
@@ -32,6 +42,11 @@ export default async function ExemplosPage() {
         </p>
       </header>
 
+      <ExampleFilter
+        available={[...new Set(examples.map((ex) => ex.occasion).filter((o): o is string => !!o))]}
+        active={active}
+      />
+
       {examples.length === 0 ? (
         <div className="text-center">
           <p className="text-dim">Os exemplos estão a caminho.</p>
@@ -44,7 +59,7 @@ export default async function ExemplosPage() {
         </div>
       ) : (
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {examples.map((ex) => (
+          {visible.map((ex) => (
             <div key={ex.id} className="flex flex-col gap-4">
               <ExampleCard seoSlug={ex.seoSlug} payload={ex.payload} />
               <CloneButton exampleId={ex.id} />
