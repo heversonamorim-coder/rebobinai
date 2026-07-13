@@ -57,7 +57,7 @@ export function HeroCarousel() {
             src="/hero/dia-dos-pais.webp"
             mobileSrc="/hero/dia-dos-pais-mobile.webp"
             alt="Pai e filho caminhando abraçados num parque ao entardecer"
-            kicker="pra o pai"
+            kicker="Para o pai"
             title="Pro seu pai, algo que ele nunca viu"
             copy="Nada de gravata. Rebobine a história de vocês num presente digital e criativo — dos causos antigos ao orgulho de hoje."
             cta="criar pro meu pai ►"
