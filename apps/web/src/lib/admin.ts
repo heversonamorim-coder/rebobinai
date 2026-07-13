@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import type { AdminGift, AdminMessage, AdminOrder, AdminStock } from './admin-types';
 
@@ -23,18 +24,30 @@ function sessionSecret(): string | undefined {
   return process.env.ADMIN_API_TOKEN;
 }
 
-/** Confere usuário/senha do operador (env). */
+/** Compara duas strings com timingSafeEqual para prevenir timing attacks. */
+function safeStringEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    timingSafeEqual(Buffer.alloc(bufB.length), bufB);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
+
+/** Confere usuário/senha do operador (env) usando comparação em tempo constante. */
 export function checkCredentials(user: string, password: string): boolean {
-  const u = process.env.ADMIN_USER;
-  const p = process.env.ADMIN_PASSWORD;
-  return Boolean(u && p && user === u && password === p);
+  const u = process.env.ADMIN_USER ?? '';
+  const p = process.env.ADMIN_PASSWORD ?? '';
+  if (!u || !p) return false;
+  return safeStringEqual(user, u) && safeStringEqual(password, p);
 }
 
 export function sessionCookieValue(): string | null {
   return sessionSecret() ?? null;
 }
 
-/** true se o cookie de sessão bate com o segredo — usado nas rotas protegidas. */
+/** true se o cookie de sessão bate com o segredo — usado nas rotas+protegidas. */
 export async function isAdmin(): Promise<boolean> {
   const secret = sessionSecret();
   if (!secret) return false;

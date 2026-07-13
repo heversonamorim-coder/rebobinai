@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { MediaService } from '../media/media.service';
@@ -71,12 +72,16 @@ export class GiftService {
   }
 
   /**
-   * Estatísticas do presente (analytics) por slug. Só quando o plano pago inclui
-   * o recurso; senão devolve { eligible: false } pra UI mostrar o upsell.
+   * Estatísticas do presente (analytics) por slug. Requer editToken válido —
+   * só o dono do presente pode ver os analytics. Só retorna dados quando o
+   * plano pago inclui o recurso; senão devolve { eligible: false }.
    */
-  async getStats(slug: string) {
+  async getStats(slug: string, editToken?: string) {
     const gift = await this.repo.findBySlug(slug);
     if (!gift || gift.status !== 'paid') throw new NotFoundException('Presente não encontrado');
+    // Valida posse: somente o dono (quem tem o editToken) pode ver os stats.
+    if (!editToken) throw new ForbiddenException('Token de edição ausente');
+    this.assertEditor(gift.editToken, editToken);
     const title = (gift.payload as { title?: string } | null)?.title ?? null;
     if (!planHasAnalytics(gift.paidPlanKey)) {
       return { eligible: false as const, title };
@@ -191,9 +196,17 @@ export class GiftService {
     return gift;
   }
 
+  /**
+   * Compara o editToken fornecido com o armazenado usando timingSafeEqual,
+   * prevenindo timing attacks que poderiam vazar o token por diferença de tempo.
+   */
   private assertEditor(expected: string, provided: string | undefined) {
-    if (!provided || provided !== expected) {
-      throw new ForbiddenException('Token de edição inválido');
-    }
+    if (!provided) throw new ForbiddenException('Token de edição inválido');
+    const expectedBuf = Buffer.from(expected);
+    const providedBuf = Buffer.from(provided);
+    // timingSafeEqual exige buffers de mesmo tamanho; se diferente, nega acesso.
+    const valid =
+      expectedBuf.length === providedBuf.length && timingSafeEqual(expectedBuf, providedBuf);
+    if (!valid) throw new ForbiddenException('Token de edição inválido');
   }
 }

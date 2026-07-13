@@ -2,11 +2,17 @@ import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SentryExceptionFilter } from './infra/sentry.filter';
 import { initSentry } from './infra/sentry';
+import helmet from 'helmet';
+import express from 'express';
 
 async function bootstrap() {
   // Observabilidade antes de tudo (no-op sem SENTRY_DSN).
   const sentryOn = initSentry();
   const app = await NestFactory.create(AppModule);
+  // Cabeçalhos de segurança HTTP (XSS, clickjacking, MIME sniffing, etc.).
+  app.use(helmet());
+  // Limite explícito de 256 KB no body JSON — evita DoS por payload gigante.
+  app.use(express.json({ limit: '256kb' }));
   // Confia no proxy (Railway) pra que req.ip reflita o IP real do cliente via
   // X-Forwarded-For — usado no analytics de acessos do presente.
   app.getHttpAdapter().getInstance().set('trust proxy', true);

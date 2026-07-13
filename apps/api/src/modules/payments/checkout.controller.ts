@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Ip, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Ip, Param, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ZodValidationPipe } from '../../infra/zod-validation.pipe';
 import {
   CardCheckoutDto,
@@ -20,19 +21,30 @@ export class CheckoutController {
     private readonly stock: StockService,
   ) {}
 
+  /** Limite de 10 req/min: endpoint financeiro sensível. */
   @Post('pix')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   pix(@Body(new ZodValidationPipe(pixCheckoutSchema)) dto: PixCheckoutDto) {
     return this.payments.checkoutPix(dto);
   }
 
+  /** Limite de 10 req/min: endpoint financeiro sensível. */
   @Post('card')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   card(@Body(new ZodValidationPipe(cardCheckoutSchema)) dto: CardCheckoutDto, @Ip() ip: string) {
     return this.payments.checkoutCard(dto, ip);
   }
 
+  /**
+   * Consulta status do pedido. Requer x-edit-token válido para o presente
+   * associado — evita enumeração de pedidos de terceiros.
+   */
   @Get('orders/:id')
-  orderStatus(@Param('id') id: string) {
-    return this.payments.getOrderStatus(id);
+  orderStatus(
+    @Param('id') id: string,
+    @Headers('x-edit-token') editToken: string | undefined,
+  ) {
+    return this.payments.getOrderStatus(id, editToken);
   }
 
   /** Catálogo de produtos físicos + disponibilidade de estoque (Tarefa 8). */

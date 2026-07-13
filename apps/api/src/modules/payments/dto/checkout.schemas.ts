@@ -3,10 +3,64 @@ import { z } from 'zod';
 /** Só planos pagos podem ir ao checkout (free não passa por aqui). */
 const planKeySchema = z.enum(['digital', 'forever', 'quadro']);
 
+// ---------------------------------------------------------------------------
+// Validação de dígitos verificadores de CPF e CNPJ
+// ---------------------------------------------------------------------------
+
+/** Valida CPF com dígitos verificadores (algoritmo padrão da Receita Federal). */
+function validCpf(raw: string): boolean {
+  const d = raw.replace(/\D/g, '');
+  if (d.length !== 11) return false;
+  // Rejeita sequências de dígitos iguais (ex.: 000.000.000-00)
+  if (/^(\d)\1+$/.test(d)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += Number(d[i]) * (10 - i);
+  const r1 = sum % 11;
+  const dig1 = r1 < 2 ? 0 : 11 - r1;
+  if (Number(d[9]) !== dig1) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += Number(d[i]) * (11 - i);
+  const r2 = sum % 11;
+  const dig2 = r2 < 2 ? 0 : 11 - r2;
+  return Number(d[10]) === dig2;
+}
+
+/** Valida CNPJ com dígitos verificadores (algoritmo padrão da Receita Federal). */
+function validCnpj(raw: string): boolean {
+  const d = raw.replace(/\D/g, '');
+  if (d.length !== 14) return false;
+  if (/^(\d)\1+$/.test(d)) return false;
+  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += Number(d[i]) * w1[i];
+  const r1 = sum % 11;
+  const dig1 = r1 < 2 ? 0 : 11 - r1;
+  if (Number(d[12]) !== dig1) return false;
+  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  sum = 0;
+  for (let i = 0; i < 13; i++) sum += Number(d[i]) * w2[i];
+  const r2 = sum % 11;
+  const dig2 = r2 < 2 ? 0 : 11 - r2;
+  return Number(d[13]) === dig2;
+}
+
+/** Valida CPF (11 dígitos) ou CNPJ (14 dígitos) com dígito verificador. */
+function validCpfOrCnpj(raw: string): boolean {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 11) return validCpf(raw);
+  if (digits.length === 14) return validCnpj(raw);
+  return false;
+}
+
 const customerSchema = z.object({
   name: z.string().min(2).max(120),
   email: z.string().email(),
-  cpfCnpj: z.string().min(11).max(18), // CPF/CNPJ exigido pelo Asaas
+  // CPF/CNPJ exigido pelo Asaas — validado com dígito verificador.
+  cpfCnpj: z
+    .string()
+    .min(11)
+    .max(18)
+    .refine(validCpfOrCnpj, { message: 'CPF ou CNPJ inválido' }),
 });
 
 const productSchema = z.enum(['caneca', 'camiseta']);

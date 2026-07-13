@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HealthController } from './health.controller';
 import { validateEnv } from './infra/env';
 import { PrismaModule } from './infra/prisma/prisma.module';
@@ -19,6 +21,8 @@ import { ContactModule } from './modules/contact/contact.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    // Rate limiting global: 60 req/min por IP; endpoints sensíveis sobrescrevem com @Throttle().
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     PrismaModule,
     BullModule.forRootAsync({
       inject: [ConfigService],
@@ -39,5 +43,9 @@ import { ContactModule } from './modules/contact/contact.module';
     AdminModule,
   ],
   controllers: [HealthController],
+  providers: [
+    // Guard global de rate limiting — aplicado a todos os endpoints.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

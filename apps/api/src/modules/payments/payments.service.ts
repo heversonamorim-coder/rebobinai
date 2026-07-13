@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -183,9 +184,17 @@ export class PaymentsService {
     return { orderId: order.id, status };
   }
 
-  async getOrderStatus(orderId: string) {
+  /**
+   * Consulta o status de um pedido. Requer x-edit-token válido para o presente
+   * associado ao pedido — impede enumeração e leitura de pedidos de terceiros.
+   */
+  async getOrderStatus(orderId: string, editToken?: string) {
     const order = await this.orders.findById(orderId);
     if (!order) throw new NotFoundException('Pedido não encontrado');
+    if (!editToken) throw new ForbiddenException('Token de edição ausente');
+    // Valida que o token pertence ao presente desse pedido.
+    // getForEdit lança ForbiddenException se o token for inválido.
+    await this.gifts.getForEdit(order.giftId, editToken);
     return { orderId: order.id, status: order.status };
   }
 
@@ -218,7 +227,7 @@ export class PaymentsService {
 
   /**
    * Ativa o presente (slug + remove marca) e dispara o e-mail com o link.
-   * Falha de e-mail não derruba o fluxo — o pagamento já foi processado.
+   * Falha de e-mail não derruba o fluxo — ` pagamento já foi processado.
    */
   private async fulfill(order: { giftId: string; customerEmail: string | null; planKey: string }) {
     const gift = await this.gifts.markPaid(order.giftId, order.planKey);

@@ -68,7 +68,16 @@ export const updateGiftSchema = z.object({
 
 export const addAssetSchema = z.object({
   type: z.enum(['image', 'audio']),
-  r2Key: z.string().min(1).max(500),
+  // r2Key deve apontar apenas para o diretório gifts/ com extensão de imagem
+  // válida — evita path traversal e referência a arquivos arbitrários no R2.
+  r2Key: z
+    .string()
+    .min(1)
+    .max(500)
+    .regex(
+      /^gifts\/[a-f0-9-]+\.(webp|avif|jpg|jpeg|png)$/,
+      'r2Key inválido: deve seguir o padrão gifts/<id>.<extensão>',
+    ),
   order: z.number().int().min(0).max(1000).optional(),
 });
 
