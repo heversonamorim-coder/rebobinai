@@ -10,6 +10,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Impede o merge de um branch defasado da base (foi o que aconteceu no
+  # f7471b5: um branch criado antes do #58 reverteu a feature ao ser mergeado).
+  # Falha quando o topo atual da base NÃO está contido no branch do PR — ou
+  # seja, exige "branch atualizado antes de mergear". Marque este check como
+  # obrigatório na proteção de branch de `main` para virar um bloqueio de merge.
+  base-atualizada:
+    name: Base atualizada
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Branch contém o topo da base?
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch --no-tags origin "$BASE_REF"
+          if git merge-base --is-ancestor "origin/$BASE_REF" "$HEAD_SHA"; then
+            echo "OK: o branch já contém o topo atual de $BASE_REF."
+          else
+            echo "::error::Branch defasado — há commits em '$BASE_REF' que não estão neste PR. Mergear assim pode reverter código mais novo (foi o caso do f7471b5)."
+            echo "Como resolver: clique em \"Update branch\" no PR, ou rode:"
+            echo "  git fetch origin $BASE_REF && git rebase origin/$BASE_REF && git push --force-with-lease"
+            exit 1
+          fi
+
   ci:
     name: Lint · Test · Build
     runs-on: ubuntu-latest
