@@ -23,7 +23,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:",
       "connect-src 'self' https:",
-      "frame-src 'none'",
+      "frame-src https://open.spotify.com", // permite player Spotify nas páginas de presente
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
