@@ -104,7 +104,7 @@ export class AiService {
     if (giftMeta) {
       await this.gifts
         .markComposedWithAi(giftMeta.giftId, giftMeta.editToken)
-        .catch((e) => this.logger.warn(`markComposedWithAi falhou: ${e instanceof Error ? e.message : e}`));
+        .catch((e) => this.logger.error(`markComposedWithAi falhou: ${e instanceof Error ? e.message : e}`));
     }
 
     // Mapeia os campos "planos" da IA pro formato do payload: startDate vira o

@@ -22,7 +22,7 @@ UPDATE "Example"
 SET "payload" = jsonb_set("payload", '{letter}', '"Ícaro, faz um ano que a gente estragou uma amizade perfeitamente boa — e foi a melhor decisão que já tomamos. Um ano de primeiras vezes — e eu aprendi que te amo escapa sozinho quando é de verdade."')
 WHERE "seoSlug" = 'ex_namoro_primeiro_ano';
 
-UPDATD "Example"
+UPDATE "Example"
 SET "payload" = jsonb_set("payload", '{letter}', '"Paula, quatro anos e eu ainda não sei o que amo mais: acordar com você ou com a Nina pisando na minha cara às 6h. Mentira, sei sim. Obrigado por transformar nosso apartamento em lar com pelo no sofá."')
 WHERE "seoSlug" = 'ex_namoro_a_gente_e_a_nina';
 
