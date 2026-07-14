@@ -57,6 +57,7 @@ model Gift {
   payload        Json       @default("{}") // conteúdo (título, carta, timeline...)
   watermark      Boolean    @default(true) // removida ao pagar
   viewCount      Int        @default(0) // contador ao vivo da página pública (F1-3)
+  composedWithAi Boolean    @default(false) // usou o compositor de IA — trava o Digital no checkout
   paidPlanKey    String? // plano pago (habilita analytics quando incluso)
   paidAt         DateTime?
   createdAt      DateTime   @default(now())
@@ -223,4 +224,21 @@ model ProductStock {
   productKey String   @id // 'caneca' | 'camiseta'
   available  Boolean  @default(true)
   updatedAt  DateTime @updatedAt @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Módulo: ai (dono da tabela AiUsage)
+// Cota anti-abuso do compositor de IA — sem login, a âncora possível é o IP.
+// Uma linha por (hash do IP, dia BR); conta as gerações do dia. A cota é do
+// servidor e por IP: a "válvula de escape" do checkout NÃO reseta isto.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AiUsage {
+  id        String   @id @default(cuid())
+  ipHash    String // sha256(ip) — não guarda o IP cru
+  day       String // 'YYYY-MM-DD' no fuso America/Sao_Paulo
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt @default(now())
+
+  @@unique([ipHash, day])
 }

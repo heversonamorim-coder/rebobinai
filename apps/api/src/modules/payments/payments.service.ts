@@ -227,7 +227,7 @@ export class PaymentsService {
 
   /**
    * Ativa o presente (slug + remove marca) e dispara o e-mail com o link.
-   * Falha de e-mail não derruba o fluxo — ` pagamento já foi processado.
+   * Falha de e-mail não derruba o fluxo — o pagamento já foi processado.
    */
   private async fulfill(order: { giftId: string; customerEmail: string | null; planKey: string }) {
     const gift = await this.gifts.markPaid(order.giftId, order.planKey);
@@ -257,6 +257,13 @@ export class PaymentsService {
     if (gift.status === 'paid') throw new ConflictException('Presente já foi pago.');
     const plan = await this.plans.getByKey(planKey as $Enums.PlanKey);
     if (!plan || !plan.active) throw new NotFoundException('Plano indisponível.');
+    // Presente montado com IA só pode ser vendido em plano que inclui IA — o
+    // Digital fica travado (a "válvula de escape" é recomeçar sem IA no front).
+    if (gift.composedWithAi && plan.key === 'digital') {
+      throw new BadRequestException(
+        'Este presente foi montado com IA — escolha o plano Pra Sempre ou +Lembrança Física.',
+      );
+    }
     return { gift, plan };
   }
 }
