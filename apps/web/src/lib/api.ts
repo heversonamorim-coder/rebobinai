@@ -122,8 +122,11 @@ export function checkoutCard(
   });
 }
 
-export function getOrderStatus(orderId: string): Promise<OrderStatus> {
-  return request<OrderStatus>(`/checkout/orders/${orderId}`, { cache: 'no-store' });
+export function getOrderStatus(orderId: string, editToken: string): Promise<OrderStatus> {
+  return request<OrderStatus>(`/checkout/orders/${orderId}`, {
+    cache: 'no-store',
+    headers: { 'x-edit-token': editToken },
+  });
 }
 
 /**
