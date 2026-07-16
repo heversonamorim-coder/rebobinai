@@ -106,6 +106,30 @@ export class PaymentsService {
     const { plan } = await this.prepare(dto.giftId, dto.editToken, dto.planKey);
     await this.assertInStock(dto);
     const resolved = this.resolveOrder(dto, plan);
+
+    // Idempotência: cliques repetidos em "gerar Pix" pra mesma rebobinada (mesmo
+    // plano/valor) reusam o pedido e o QR já criados — sem pedido/cobrança novos.
+    // Se o QR antigo não puder ser lido (expirou/cancelado), cai pro fluxo normal.
+    const reusable = await this.orders.findReusablePix(dto.giftId, plan.key, resolved.amount);
+    if (reusable?.gatewayId) {
+      try {
+        const qr = await this.asaas.getPixQrCode(reusable.gatewayId);
+        return {
+          orderId: reusable.id,
+          status: reusable.status,
+          pix: {
+            qrImage: `data:image/png;base64,${qr.encodedImage}`,
+            copyPaste: qr.payload,
+            expiresAt: qr.expirationDate ?? null,
+          },
+        };
+      } catch (e) {
+        this.logger.warn(
+          `Pix reaproveitável falhou (${reusable.id}), gerando novo: ${e instanceof Error ? e.message : e}`,
+        );
+      }
+    }
+
     const customer = await this.asaas.createCustomer(dto.customer);
     const order = await this.orders.create({
       giftId: dto.giftId,

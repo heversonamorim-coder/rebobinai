@@ -106,6 +106,7 @@ export class AdminService {
       const product = getProduct(o.productKey ?? undefined);
       return {
         id: o.id,
+        giftId: o.giftId,
         createdAt: o.createdAt,
         paidAt: o.paidAt,
         status: o.status,
