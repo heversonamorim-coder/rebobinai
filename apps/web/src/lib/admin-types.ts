@@ -3,6 +3,7 @@ import type { Shipping } from './products';
 
 export interface AdminOrder {
   id: string;
+  giftId: string;
   createdAt: string;
   paidAt: string | null;
   status: 'pending' | 'paid' | 'failed' | 'canceled' | 'refunded';

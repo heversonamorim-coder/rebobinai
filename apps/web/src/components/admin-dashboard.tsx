@@ -49,13 +49,35 @@ export function AdminDashboard({
   const [tab, setTab] = useState<'vendas' | 'rebobinadas' | 'mensagens' | 'produção'>('vendas');
   const unread = messages.filter((m) => !m.handled).length;
 
+  // Agrupa os pedidos por rebobinada (uma linha por gift). Uma mesma rebobinada
+  // pode ter vários pedidos (tentativas de checkout); mostra o pago se houver,
+  // senão o mais recente, com um contador de tentativas. (Os pedidos já vêm
+  // ordenados por data desc da API.)
+  const salesByGift = useMemo(() => {
+    // Pedidos vêm desc por data, então o 1º visto de cada gift é o mais recente
+    // (vira o representante). Se aparecer um pago, ele assume como representante.
+    const groups = new Map<string, { rep: AdminOrder; attempts: number; hasPaid: boolean }>();
+    for (const o of orders) {
+      const g = groups.get(o.giftId);
+      if (!g) {
+        groups.set(o.giftId, { rep: o, attempts: 1, hasPaid: o.status === 'paid' });
+      } else {
+        g.attempts += 1;
+        if (o.status === 'paid' && !g.hasPaid) {
+          g.rep = o;
+          g.hasPaid = true;
+        }
+      }
+    }
+    return [...groups.values()].map(({ rep, attempts }) => ({ rep, attempts }));
+  }, [orders]);
+
   const stats = useMemo(() => {
     const paid = orders.filter((o) => o.status === 'paid');
-    const physical = orders.filter((o) => o.productKey);
-    const toShip = physical.filter((o) => o.status === 'paid' && !o.trackingCode);
+    const toShip = paid.filter((o) => o.productKey && !o.trackingCode);
     const revenue = paid.reduce((s, o) => s + o.amountCharged, 0);
-    return { total: orders.length, paid: paid.length, physical: physical.length, toShip: toShip.length, revenue };
-  }, [orders]);
+    return { rebobinadas: salesByGift.length, paid: paid.length, toShip: toShip.length, revenue };
+  }, [orders, salesByGift]);
 
   async function logout() {
     await fetch('/api/admin/login', { method: 'DELETE' });
@@ -102,7 +124,7 @@ export function AdminDashboard({
               tab === t ? 'border-cyan text-cyan' : 'border-[var(--line)] text-dim hover:text-glow'
             }`}
           >
-            {t === 'vendas' && `vendas · ${orders.length}`}
+            {t === 'vendas' && `vendas · ${salesByGift.length}`}
             {t === 'rebobinadas' && `rebobinadas · ${gifts.length}`}
             {t === 'produção' && 'produção'}
             {t === 'mensagens' && (
@@ -122,20 +144,20 @@ export function AdminDashboard({
       {tab === 'vendas' && (
         <>
           <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="pedidos" value={String(stats.total)} />
+            <StatCard label="rebobinadas" value={String(stats.rebobinadas)} />
             <StatCard label="pagos" value={String(stats.paid)} accent />
             <StatCard label="a enviar" value={String(stats.toShip)} warn={stats.toShip > 0} />
             <StatCard label="receita" value={formatBRL(stats.revenue)} accent />
           </section>
 
-          {orders.length === 0 ? (
+          {salesByGift.length === 0 ? (
             <p className="rounded-lg border border-[var(--line)] bg-panel/40 px-4 py-8 text-center text-dim">
               Nenhuma venda ainda.
             </p>
           ) : (
             <div className="space-y-4">
-              {orders.map((o) => (
-                <OrderCard key={o.id} order={o} onTracked={onTracked} />
+              {salesByGift.map(({ rep, attempts }) => (
+                <OrderCard key={rep.id} order={rep} attempts={attempts} onTracked={onTracked} />
               ))}
             </div>
           )}
@@ -488,9 +510,11 @@ function StatCard({ label, value, accent, warn }: { label: string; value: string
 
 function OrderCard({
   order,
+  attempts = 1,
   onTracked,
 }: {
   order: AdminOrder;
+  attempts?: number;
   onTracked: (id: string, trackingCode: string, shippedAt: string) => void;
 }) {
   const isPhysical = Boolean(order.productKey);
@@ -509,6 +533,11 @@ function OrderCard({
             <span className="ml-2 rounded-full bg-magenta/20 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-magenta">
               {order.productName}
               {order.productSize ? ` · tam ${order.productSize}` : ''}
+            </span>
+          )}
+          {attempts > 1 && (
+            <span className="ml-2 rounded-full bg-[var(--line)]/60 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.15em] text-dim">
+              {attempts} tentativas
             </span>
           )}
         </span>
