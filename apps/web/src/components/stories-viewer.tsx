@@ -395,7 +395,7 @@ function TimelineSlide({ items, assets }: { items: GiftPayload['timeline']; asse
                 <img
                   src={photo}
                   alt=""
-                  className="mt-3 max-h-56 w-full rounded-lg border border-[var(--line)] object-cover"
+                  className="mt-3 max-h-72 w-auto max-w-full rounded-lg border border-[var(--line)] object-contain"
                 />
               )}
             </li>
