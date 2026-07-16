@@ -126,18 +126,21 @@ export default function PagarPage() {
   }, [isPhysical, product, shipping.cep]);
 
   // Poll do pedido enquanto não confirmar (o webhook do Asaas é assíncrono).
+  // O endpoint exige o x-edit-token (dono do presente) — sem ele volta 403 e a
+  // tela ficaria presa em "Aguardando pagamento...".
   useEffect(() => {
-    if (!orderId || paid) return;
+    if (!orderId || paid || !ref) return;
+    const editToken = ref.editToken;
     const t = setInterval(async () => {
       try {
-        const s = await getOrderStatus(orderId);
+        const s = await getOrderStatus(orderId, editToken);
         if (s.status === 'paid') setPaid(true);
       } catch {
         // mantém o poll
       }
     }, 3000);
     return () => clearInterval(t);
-  }, [orderId, paid]);
+  }, [orderId, paid, ref]);
 
   // Ao confirmar, busca o presente recém-liberado (slug + payload) pra tela de
   // compartilhamento — sem sair da página.
