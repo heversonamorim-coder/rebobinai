@@ -336,6 +336,42 @@ function CoverSlide({
   );
 }
 
+/**
+ * Foto no estilo "stories": a imagem nítida e inteira (object-contain, sem
+ * corte) centralizada sobre um blur escurecido da própria foto, que preenche o
+ * quadro. O tamanho do quadro vem pelo className (ex.: aspect-square, h-72).
+ */
+function PhotoFrame({
+  src,
+  className = '',
+  onClick,
+}: {
+  src: string;
+  className?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      className={`relative flex items-center justify-center overflow-hidden rounded-lg border border-[var(--line)] bg-black ${
+        onClick ? 'cursor-pointer transition hover:brightness-110' : ''
+      } ${className}`}
+      {...(onClick ? { 'data-interactive': true, onClick } : {})}
+    >
+      {/* Fundo: a própria foto desfocada e escurecida, preenchendo o quadro. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl brightness-[.55] saturate-150"
+      />
+      {/* Primeiro plano: a foto inteira, nítida, centralizada. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" className="relative max-h-full max-w-full object-contain" />
+    </div>
+  );
+}
+
 function PhotosSlide({
   photos,
   onOpen,
@@ -350,15 +386,7 @@ function PhotosSlide({
       </p>
       <div className="grid grid-cols-2 gap-2">
         {photos.map((p, i) => (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            key={p.id}
-            src={p.url}
-            alt=""
-            data-interactive
-            onClick={() => onOpen(i)}
-            className="aspect-square w-full cursor-pointer rounded-lg border border-[var(--line)] object-cover transition hover:brightness-110"
-          />
+          <PhotoFrame key={p.id} src={p.url} onClick={() => onOpen(i)} className="aspect-square w-full" />
         ))}
       </div>
       <p className="mt-4 text-center font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim/70">
@@ -390,14 +418,7 @@ function TimelineSlide({ items, assets }: { items: GiftPayload['timeline']; asse
               {item.description && (
                 <p className="mt-1 text-sm leading-relaxed text-dim">{item.description}</p>
               )}
-              {photo && (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={photo}
-                  alt=""
-                  className="mt-3 max-h-72 w-auto max-w-full rounded-lg border border-[var(--line)] object-contain"
-                />
-              )}
+              {photo && <PhotoFrame src={photo} className="mt-3 h-72 w-full" />}
             </li>
           );
         })}
@@ -657,14 +678,7 @@ function ClosingSlide({
       <p className="mb-6 font-mono text-[0.7rem] uppercase tracking-[0.3em] text-cyan">
         pra fechar
       </p>
-      {photoUrl && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={photoUrl}
-          alt=""
-          className="mb-6 max-h-56 w-auto max-w-full rounded-xl border border-[var(--line)] object-cover"
-        />
-      )}
+      {photoUrl && <PhotoFrame src={photoUrl} className="mb-6 h-72 w-full max-w-xs" />}
       {message && (
         <p className="rb-chroma max-w-prose whitespace-pre-wrap font-display text-2xl font-semibold leading-snug text-glow sm:text-3xl">
           {message}
