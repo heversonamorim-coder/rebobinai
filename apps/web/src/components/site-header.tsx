@@ -7,8 +7,9 @@ import { useEffect, useState } from 'react';
 // Âncoras absolutas (/#...) para funcionarem tanto na home quanto nas páginas
 // internas (ex.: /exemplos), sempre levando às seções da página principal.
 const LINKS = [
+  { href: '/criar', label: 'Criar meu presente' },
   { href: '/#como-funciona', label: 'Como funciona' },
-  { href: '/#inspiracao', label: 'Inspiração' },
+  { href: '/#inspiracao', label: 'Inspiração - exemplos' },
   { href: '/#planos', label: 'Planos' },
   { href: '/#faq', label: 'Perguntas frequentes' },
 ];
