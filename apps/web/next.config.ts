@@ -23,7 +23,9 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:",
       "connect-src 'self' https:",
-      "frame-src https://open.spotify.com", // permite player Spotify nas páginas de presente
+      // player Spotify + mapa "onde se conheceram" (Google Maps: maps.google.com
+      // no embed keyless, que pode redirecionar pra www.google.com, e a Embed API).
+      'frame-src https://open.spotify.com https://maps.google.com https://www.google.com',
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
