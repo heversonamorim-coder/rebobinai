@@ -44,6 +44,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Canonicalização do domínio: força o apex sem www (rebobinai.com.br). Dois
+  // domínios servindo 200 com o mesmo conteúdo dividem a autoridade no SEO.
+  // (permanent = 308; o Google trata como 301.) O apex precisa estar
+  // configurado e resolvendo no Vercel para o destino existir.
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.rebobinai.com.br' }],
+        destination: 'https://rebobinai.com.br/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
