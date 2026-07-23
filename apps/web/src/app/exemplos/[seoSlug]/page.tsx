@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { CloneButton } from '../../../components/clone-button';
 import { StoriesViewer } from '../../../components/stories-viewer';
 import { getExampleBySeoSlug } from '../../../lib/api';
+import { OCCASIONS_CONFIG } from '../../../lib/occasions.config';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,10 @@ export default async function ExampleStoryPage({ params }: Params) {
   const ex = await getExampleBySeoSlug(seoSlug);
   if (!ex) notFound();
 
+  // Landing da persona deste exemplo — internal linking de volta (F2-6),
+  // pra nenhuma página de exemplo ficar órfã no grafo de SEO.
+  const landing = OCCASIONS_CONFIG.find((o) => o.galleryOccasion === ex.occasion);
+
   return (
     <main className="relative flex min-h-svh w-full items-stretch justify-center bg-tape sm:items-center sm:py-6">
       <StoriesViewer payload={ex.payload} occasion={ex.occasion} assets={ex.payload.assets} fullscreen />
@@ -53,6 +58,14 @@ export default async function ExampleStoryPage({ params }: Params) {
       <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
         <div className="w-full max-w-xs rounded-xl border border-[var(--line)] bg-tape/80 p-2 backdrop-blur">
           <CloneButton exampleId={ex.id} />
+          {landing && (
+            <Link
+              href={`/${landing.slug}`}
+              className="mt-1 block text-center font-mono text-[0.6rem] uppercase tracking-[0.2em] text-dim transition hover:text-cyan"
+            >
+              mais ideias de presente · {landing.label} →
+            </Link>
+          )}
         </div>
       </div>
     </main>

@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { Osd } from '@rebobinai/ui';
 import { HeroCarousel } from '../components/hero-carousel';
+import { JsonLd } from '../components/json-ld';
 import { PricingGrid } from '../components/pricing';
 import { SiteFooter } from '../components/site-footer';
 import { SiteHeader } from '../components/site-header';
 import { getPlans } from '../lib/api';
+import { OCCASIONS_CONFIG } from '../lib/occasions.config';
 import { PLANS_FALLBACK } from '../lib/plans';
+import { faqSchema, howToSchema, productSchema } from '../lib/schema';
 
 // Landing com planos por ISR; resiliente via fallback estático.
 export const revalidate = 3600;
@@ -53,6 +56,10 @@ export default async function Home() {
 
   return (
     <main className="overflow-hidden">
+      {/* SEO/AEO: produto (preços), passos e FAQ legíveis por máquina. */}
+      <JsonLd data={productSchema(plans)} />
+      <JsonLd data={howToSchema(STEPS)} />
+      <JsonLd data={faqSchema(FAQ)} />
       <SiteHeader />
 
       {/* Hero (carrossel com foto de fundo nos slides 2 e 3) */}
@@ -112,6 +119,25 @@ export default async function Home() {
         <div className="mt-12">
           <PricingGrid plans={plans} />
         </div>
+      </section>
+
+      {/* Ocasiões — internal linking para as landings de SEO (F2-6) */}
+      <section id="ocasioes" className="mx-auto max-w-3xl px-5 py-20 text-center">
+        <SectionTitle kicker="ocasiões" title="Um presente pra cada história" />
+        <p className="mx-auto mt-3 max-w-xl text-sm text-dim">
+          Namoro, Dia das Mães, casamento, melhor amiga — veja como a rebobinada fica em cada ocasião.
+        </p>
+        <nav aria-label="Presentes por ocasião" className="mt-8 flex flex-wrap justify-center gap-2">
+          {OCCASIONS_CONFIG.map((o) => (
+            <Link
+              key={o.slug}
+              href={`/${o.slug}`}
+              className="rounded-full border border-[var(--line)] px-4 py-2 font-mono text-[0.7rem] uppercase tracking-[0.2em] text-dim transition hover:border-cyan hover:text-cyan"
+            >
+              {o.label}
+            </Link>
+          ))}
+        </nav>
       </section>
 
       {/* FAQ */}

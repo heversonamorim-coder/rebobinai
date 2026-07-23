@@ -39,6 +39,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${title} · Rebobinaí ◄◄`,
     description,
     alternates: { canonical: url },
+    // Presente é conteúdo privado do cliente — fora do índice do Google
+    // (o robots.txt também bloqueia /p/). OG tags ficam: o unfurl no WhatsApp
+    // não depende de indexação.
+    robots: { index: false, follow: false },
     openGraph: { title, description, url, type: 'website', siteName: 'Rebobinaí' },
     twitter: { card: 'summary_large_image', title, description },
   };
