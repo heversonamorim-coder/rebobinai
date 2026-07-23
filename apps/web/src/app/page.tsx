@@ -166,7 +166,7 @@ export default async function Home() {
           criar minha rebobinada ►
         </Link>
         <p className="mt-10 font-mono text-[0.65rem] uppercase tracking-[0.3em] text-dim/60">
-          ◄◄ rebobinai.app
+          ◄◄ rebobinai.com.br
         </p>
       </section>
 

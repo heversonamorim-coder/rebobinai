@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { StoriesViewer } from '../../../components/stories-viewer';
 import { ViewBeacon } from '../../../components/view-beacon';
 import { getPublicGift } from '../../../lib/api';
+import { SITE_URL } from '../../../lib/site';
 
 // Contador ao vivo: sem cache estático, renderiza a cada abertura.
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ async function siteBaseUrl(): Promise<string> {
     const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
     return `${proto}://${host}`;
   }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rebobinai.app';
+  return SITE_URL;
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
