@@ -210,6 +210,18 @@ export async function getExamples(): Promise<Example[]> {
   }
 }
 
+/**
+ * Exemplos com cache ISR (revalida a cada hora) — para sitemap e landings de
+ * ocasião SSG (F2-6), onde `no-store` forçaria a rota a ser dinâmica.
+ */
+export async function getExamplesCached(): Promise<Example[]> {
+  try {
+    return await request<Example[]>('/examples', { next: { revalidate: 3600 } });
+  } catch {
+    return [];
+  }
+}
+
 /** Um exemplo da galeria pelo seoSlug (prévia em stories /exemplos/:seoSlug). */
 export async function getExampleBySeoSlug(seoSlug: string): Promise<Example | null> {
   const all = await getExamples();

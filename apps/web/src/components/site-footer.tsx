@@ -4,6 +4,7 @@ import { Logo } from '@rebobinai/ui';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ApiError, sendContactMessage } from '../lib/api';
+import { OCCASIONS_CONFIG } from '../lib/occasions.config';
 
 const inputClass =
   'w-full rounded-lg border border-[var(--line)] bg-panel px-4 py-3 text-sm text-glow placeholder:text-dim/60 focus:border-cyan focus:outline-none';
@@ -50,6 +51,19 @@ export function SiteFooter() {
           >
             @rebobinai.app
           </a>
+        </nav>
+
+        {/* Presentes por ocasião — internal linking pras landings de SEO (F2-6). */}
+        <nav
+          aria-label="Presentes por ocasião"
+          className="flex flex-col gap-3 font-mono text-[0.72rem] uppercase tracking-[0.2em] text-dim"
+        >
+          <span className="text-dim/60">presentes por ocasião</span>
+          {OCCASIONS_CONFIG.map((o) => (
+            <Link key={o.slug} href={`/${o.slug}`} className="transition hover:text-cyan">
+              {o.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="md:text-right">

@@ -1,0 +1,43 @@
+# Rebobinaí
+
+> O presente digital que rebobina a história de vocês. O cliente conta a história em um parágrafo, a IA monta uma página-presente personalizada — fotos, carta, música, linha do tempo e contador de dias — com estética retrô de VHS/Y2K, pronta em cerca de 5 minutos. Quem recebe abre por link (WhatsApp) ou QR code, direto no navegador, sem app e sem cadastro.
+
+Produto brasileiro (pt-BR), da HJCM Tecnologia (CNPJ 48.656.525/0001-06).
+
+## Como funciona
+
+1. Conta a história: um parágrafo sobre vocês (ocasião, nomes, momentos).
+2. Vê a prévia: a rebobinada ganha vida na hora — grátis, sem login.
+3. Paga e compartilha: pagamento único libera o link secreto e o QR code.
+
+## Preços (pagamento único, Pix ou cartão)
+
+- Grátis: criar e ver a prévia (com marca d'água, sem link compartilhável).
+- Digital — R$ 19,90 (lançamento; cheio R$ 24,90): link + QR, música e fotos, hospedagem por 1 ano.
+- Pra Sempre — R$ 29,90 (lançamento; cheio R$ 39,90): vitalício, IA ilimitada, analytics de aberturas, mais fotos.
+- + Lembrança Física — a partir de R$ 69,90 + frete: caneca ou camiseta com o QR code do presente.
+
+## Ocasiões
+
+Presente para namorada, namorado, Dia das Mães, Dia dos Pais, casamento e bodas, melhor amiga, avó/avô e aniversário.
+
+## Páginas principais
+
+- [Como funciona](https://rebobinai.com.br/): landing com passos, planos e FAQ
+- [Exemplos por ocasião](https://rebobinai.com.br/exemplos): rebobinadas prontas para usar como base
+- [Criar presente](https://rebobinai.com.br/criar): editor guest-first, sem login
+- [Presente para namorada](https://rebobinai.com.br/presente-namorada)
+- [Presente para namorado](https://rebobinai.com.br/presente-namorado)
+- [Presente de Dia das Mães](https://rebobinai.com.br/presente-dia-das-maes)
+- [Presente de Dia dos Pais](https://rebobinai.com.br/presente-dia-dos-pais)
+- [Presente de casamento](https://rebobinai.com.br/presente-casamento)
+- [Presente para melhor amiga](https://rebobinai.com.br/presente-melhor-amiga)
+- [Presente para avó](https://rebobinai.com.br/presente-avo)
+- [Presente de aniversário](https://rebobinai.com.br/presente-aniversario)
+
+## Fatos rápidos
+
+- Quem recebe não precisa de app nem de conta: o link abre no navegador.
+- Criar e ver a prévia é grátis; paga-se apenas para liberar o link.
+- O dono do presente acompanha as aberturas (analytics no plano Pra Sempre).
+- Instagram: https://instagram.com/rebobinai.app

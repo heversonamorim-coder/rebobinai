@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { StoriesViewer } from '../../../components/stories-viewer';
 import { ViewBeacon } from '../../../components/view-beacon';
 import { getPublicGift } from '../../../lib/api';
+import { SITE_URL } from '../../../lib/site';
 
 // Contador ao vivo: sem cache estático, renderiza a cada abertura.
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ async function siteBaseUrl(): Promise<string> {
     const proto = h.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
     return `${proto}://${host}`;
   }
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rebobinai.app';
+  return SITE_URL;
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
@@ -39,6 +40,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${title} · Rebobinaí ◄◄`,
     description,
     alternates: { canonical: url },
+    // Presente é conteúdo privado do cliente — fora do índice do Google
+    // (o robots.txt também bloqueia /p/). OG tags ficam: o unfurl no WhatsApp
+    // não depende de indexação.
+    robots: { index: false, follow: false },
     openGraph: { title, description, url, type: 'website', siteName: 'Rebobinaí' },
     twitter: { card: 'summary_large_image', title, description },
   };
