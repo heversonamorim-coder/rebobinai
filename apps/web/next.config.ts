@@ -18,13 +18,18 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       // unsafe-eval necessário para Next.js dev; googletagmanager/googleadservices/
-      // google-analytics para o GA4 (layout) e a tag de conversão do Google Ads (/criar).
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.googleadservices.com https://www.google-analytics.com https://googleads.g.doubleclick.net",
+      // google-analytics para o GA4 (layout) e a tag de conversão do Google Ads (/criar);
+      // us[-assets].i.posthog.com para os scripts do PostHog (web-vitals, surveys,
+      // dead-clicks, config, etc. carregados sob demanda pelo SDK).
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.googleadservices.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://us-assets.i.posthog.com https://us.i.posthog.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:",
       "connect-src 'self' https:",
+      // PostHog roda parte do processamento (ex.: session replay) em Web Worker
+      // criado a partir de blob:; sem isto o worker-src cai no default-src 'self'.
+      "worker-src 'self' blob:",
       // player Spotify + mapa "onde se conheceram" (Google Maps: maps.google.com
       // no embed keyless, que pode redirecionar pra www.google.com, e a Embed API) +
       // frames de conversão do Google Ads (doubleclick).
