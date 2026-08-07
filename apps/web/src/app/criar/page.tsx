@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CountdownTimecode } from '../../components/countdown-timecode';
+import { GoogleAdsConversion } from '../../components/google-ads-conversion';
 import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
 import { captureError, trackEvent } from '../../lib/analytics';
@@ -261,6 +262,8 @@ export default function CriarPage() {
 
   return (
     <main className="mx-auto min-h-svh w-full max-w-5xl px-5 py-10 sm:py-16">
+      {/* Conversão do Google Ads: dispara ao abrir a página de criação. */}
+      <GoogleAdsConversion sendTo="AW-16916081421/0_37CPrW-qcaEI3Wm4I_" value={1.0} currency="BRL" />
       <header className="mb-8">
         <p className="font-mono text-[0.7rem] uppercase tracking-[0.3em] text-dim">
           <Link href="/" className="transition hover:text-cyan">
