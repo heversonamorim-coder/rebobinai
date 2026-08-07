@@ -17,15 +17,18 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // unsafe-eval necessário para Next.js dev
+      // unsafe-eval necessário para Next.js dev; googletagmanager/googleadservices/
+      // google-analytics para o GA4 (layout) e a tag de conversão do Google Ads (/criar).
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.googleadservices.com https://www.google-analytics.com https://googleads.g.doubleclick.net",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
       "media-src 'self' blob: https:",
       "connect-src 'self' https:",
       // player Spotify + mapa "onde se conheceram" (Google Maps: maps.google.com
-      // no embed keyless, que pode redirecionar pra www.google.com, e a Embed API).
-      'frame-src https://open.spotify.com https://maps.google.com https://www.google.com',
+      // no embed keyless, que pode redirecionar pra www.google.com, e a Embed API) +
+      // frames de conversão do Google Ads (doubleclick).
+      'frame-src https://open.spotify.com https://maps.google.com https://www.google.com https://td.doubleclick.net https://googleads.g.doubleclick.net',
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
