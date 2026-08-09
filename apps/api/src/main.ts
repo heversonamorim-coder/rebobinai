@@ -28,6 +28,9 @@ async function bootstrap() {
     const { httpAdapter } = app.get(HttpAdapterHost);
     app.useGlobalFilters(new SentryExceptionFilter(httpAdapter));
   }
+  // Encerramento gracioso (SIGTERM do Railway) → dispara onModuleDestroy:
+  // Prisma desconecta e o PostHog dá flush dos eventos pendentes.
+  app.enableShutdownHooks();
   const port = Number(process.env.PORT ?? 3001);
   await app.listen(port);
   // eslint-disable-next-line no-console

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AnalyticsModule } from '../analytics/analytics.module';
 import { GiftModule } from '../gift/gift.module';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
@@ -11,7 +12,7 @@ import { AiUsageRepository } from './ai-usage.repository';
  * GiftService exportado (não toca a tabela Gift diretamente).
  */
 @Module({
-  imports: [GiftModule],
+  imports: [GiftModule, AnalyticsModule],
   controllers: [AiController],
   providers: [AiService, AiUsageRepository],
   exports: [AiService],
