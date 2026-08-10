@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'node:crypto';
+import { AI_SPAN_OP, Sentry } from '../../infra/sentry';
+import { AnalyticsService } from '../analytics/analytics.service';
 import { GiftService } from '../gift/gift.service';
 import { brDay } from '../gift/geo';
 import { AiUsageRepository } from './ai-usage.repository';
@@ -52,6 +54,7 @@ export class AiService {
     config: ConfigService,
     private readonly usage: AiUsageRepository,
     private readonly gifts: GiftService,
+    private readonly analytics: AnalyticsService,
   ) {
     const apiKey = config.get<string>('ANTHROPIC_API_KEY');
     this.model = config.get<string>('ANTHROPIC_MODEL') ?? 'claude-opus-4-8';
@@ -93,32 +96,85 @@ export class AiService {
       );
     }
 
-    let draft = this.tryParse(await this.callModel(text, false));
-    if (!draft) draft = this.tryParse(await this.callModel(text, true));
-    if (!draft) {
-      throw new UnprocessableEntityException('Não consegui montar o rascunho a partir do texto.');
-    }
+    // A geração vira um span próprio (novo trace) — sempre amostrado, mesmo com
+    // o tracing geral desligado (ver infra/sentry.ts). Aqui saem latência,
+    // tokens e erros da IA; o `setUser(ipHash)` liga o span ao usuário.
+    return Sentry.startNewTrace(() =>
+      Sentry.startSpan(
+        {
+          name: 'ai.draft',
+          op: AI_SPAN_OP,
+          attributes: {
+            'gen_ai.request.model': this.model,
+            'ai.input_length': text.length,
+            'ai.has_gift': Boolean(giftMeta),
+          },
+        },
+        async (span) => {
+          Sentry.setUser({ id: ipHash });
 
-    // Só conta e marca depois de uma geração de sucesso.
-    await this.usage.increment(ipHash, day);
-    if (giftMeta) {
-      await this.gifts
-        .markComposedWithAi(giftMeta.giftId, giftMeta.editToken)
-        .catch((e) => this.logger.error(`markComposedWithAi falhou: ${e instanceof Error ? e.message : e}`));
-    }
+          let inputTokens = 0;
+          let outputTokens = 0;
+          const first = await this.callModel(text, false);
+          inputTokens += first.inputTokens;
+          outputTokens += first.outputTokens;
+          let draft = this.tryParse(first.text);
+          if (!draft) {
+            const retry = await this.callModel(text, true);
+            inputTokens += retry.inputTokens;
+            outputTokens += retry.outputTokens;
+            draft = this.tryParse(retry.text);
+          }
+          if (!draft) {
+            throw new UnprocessableEntityException('Não consegui montar o rascunho a partir do texto.');
+          }
 
-    // Mapeia os campos "planos" da IA pro formato do payload: startDate vira o
-    // contador (counter.targetDate); closingMessage segue como está.
-    const { occasion, startDate, closingMessage, ...rest } = draft;
-    const payload = {
-      ...rest,
-      ...(startDate ? { counter: { targetDate: startDate } } : {}),
-      ...(closingMessage ? { closingMessage } : {}),
-    };
-    return { occasion, payload, remaining: Math.max(0, this.freeDailyLimit - used - 1) };
+          // Só conta e marca depois de uma geração de sucesso.
+          await this.usage.increment(ipHash, day);
+          if (giftMeta) {
+            await this.gifts
+              .markComposedWithAi(giftMeta.giftId, giftMeta.editToken)
+              .catch((e) => this.logger.error(`markComposedWithAi falhou: ${e instanceof Error ? e.message : e}`));
+          }
+
+          const remaining = Math.max(0, this.freeDailyLimit - used - 1);
+
+          span.setAttributes({
+            'gen_ai.usage.input_tokens': inputTokens,
+            'gen_ai.usage.output_tokens': outputTokens,
+            'ai.occasion': draft.occasion ?? 'none',
+            'ai.remaining': remaining,
+          });
+
+          // Evento de produto: 1 por geração, com distinctId = hash do IP. É o
+          // que responde "quantos usuários distintos usaram a IA" no PostHog.
+          this.analytics.capture(ipHash, 'ai_draft_generated', {
+            occasion: draft.occasion ?? null,
+            model: this.model,
+            input_tokens: inputTokens,
+            output_tokens: outputTokens,
+            has_gift: Boolean(giftMeta),
+            remaining,
+          });
+
+          // Mapeia os campos "planos" da IA pro formato do payload: startDate vira
+          // o contador (counter.targetDate); closingMessage segue como está.
+          const { occasion, startDate, closingMessage, ...rest } = draft;
+          const payload = {
+            ...rest,
+            ...(startDate ? { counter: { targetDate: startDate } } : {}),
+            ...(closingMessage ? { closingMessage } : {}),
+          };
+          return { occasion, payload, remaining };
+        },
+      ),
+    );
   }
 
-  private async callModel(text: string, stricter: boolean): Promise<string> {
+  private async callModel(
+    text: string,
+    stricter: boolean,
+  ): Promise<{ text: string; inputTokens: number; outputTokens: number }> {
     const system = stricter
       ? `${SYSTEM}\n\nATENÇÃO: sua última resposta não foi um JSON válido. Responda AGORA apenas com o objeto JSON.`
       : SYSTEM;
@@ -138,7 +194,11 @@ export class AiService {
     for (const block of message.content) {
       if (block.type === 'text') out += block.text;
     }
-    return out;
+    return {
+      text: out,
+      inputTokens: message.usage?.input_tokens ?? 0,
+      outputTokens: message.usage?.output_tokens ?? 0,
+    };
   }
 
   private tryParse(raw: string) {

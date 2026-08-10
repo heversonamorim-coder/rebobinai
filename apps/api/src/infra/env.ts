@@ -40,7 +40,13 @@ const envSchema = z.object({
 
   // Observabilidade
   SENTRY_DSN: z.string().optional(),
+  // Taxa de amostragem de tracing das rotas HTTP em geral (0 = desligado, sem
+  // consumir cota de spans). As operações de IA são SEMPRE amostradas à parte
+  // (ver infra/sentry.ts) — este número controla só o "resto".
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0),
+  // PostHog server-side (contagem de uso de IA por usuário). Sem KEY vira no-op.
   POSTHOG_KEY: z.string().optional(),
+  POSTHOG_HOST: z.string().url().default('https://us.i.posthog.com'),
 });
 
 export type Env = z.infer<typeof envSchema>;
