@@ -9,6 +9,24 @@ import posthog from 'posthog-js';
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+
+type Gtag = (...args: unknown[]) => void;
+declare global {
+  interface Window {
+    gtag?: Gtag;
+  }
+}
+
+/**
+ * Encaminha um evento pro GA4 via gtag (a função é definida no layout quando
+ * NEXT_PUBLIC_GA_ID existe). No-op sem GA_ID ou fora do browser.
+ */
+function gtagEvent(name: string, props?: Record<string, unknown>): void {
+  if (GA_ID && typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', name, props ?? {});
+  }
+}
 
 let started = false;
 
@@ -36,9 +54,37 @@ export function trackPageview(url: string): void {
   if (POSTHOG_KEY) posthog.capture('$pageview', { $current_url: url });
 }
 
-/** Evento de produto (ex.: começou a criar, concluiu, etc.). */
+/** Evento de produto (ex.: começou a criar, concluiu, etc.). Vai pro PostHog + GA4. */
 export function trackEvent(name: string, props?: Record<string, unknown>): void {
   if (POSTHOG_KEY) posthog.capture(name, props);
+  gtagEvent(name, props);
+}
+
+/**
+ * Passos do funil de criação (/criar), na ordem do wizard. Cada nome vira um
+ * evento no GA4 e um passo no "Funnel exploration". São fixos e sem acento
+ * (exigência do GA4) — não reordene nem renomeie sem ajustar o funil montado
+ * no GA4. O índice do array corresponde ao `step` do wizard.
+ */
+export const CRIAR_FUNNEL_EVENTS = [
+  'criar_etapa_1_ocasiao',
+  'criar_etapa_2_historia',
+  'criar_etapa_3_numeros',
+  'criar_etapa_4_fotos',
+  'criar_etapa_5_linha_do_tempo',
+  'criar_etapa_6_trilha',
+  'criar_etapa_7_capriche',
+  'criar_etapa_8_finalizar',
+] as const;
+
+/**
+ * Dispara o evento do passo atual do funil de criação (GA4 + PostHog). Chamado
+ * a cada mudança de passo — é o que permite ver "onde o cliente parou".
+ */
+export function trackCriarStep(index: number): void {
+  const name = CRIAR_FUNNEL_EVENTS[index];
+  if (!name) return;
+  trackEvent(name, { funnel: 'criar', step_index: index + 1, step_name: name });
 }
 
 /**
