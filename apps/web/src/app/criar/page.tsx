@@ -6,7 +6,7 @@ import { CountdownTimecode } from '../../components/countdown-timecode';
 import { GoogleAdsConversion } from '../../components/google-ads-conversion';
 import { Lightbox } from '../../components/lightbox';
 import { StoriesViewer } from '../../components/stories-viewer';
-import { captureError, trackEvent } from '../../lib/analytics';
+import { captureError, trackCriarStep, trackEvent } from '../../lib/analytics';
 import {
   ApiError,
   createGift,
@@ -121,6 +121,13 @@ export default function CriarPage() {
   // Ao trocar de passo, o override de foco por campo é zerado.
   useEffect(() => {
     setFocusOverride(null);
+  }, [step]);
+
+  // Funil de criação: marca o passo atual no GA4/PostHog a cada mudança (e no
+  // mount, no passo 0). É o que alimenta o "Funnel exploration" — mostra até
+  // onde cada cliente avançou na criação do presente.
+  useEffect(() => {
+    trackCriarStep(step);
   }, [step]);
 
   // Retoma um rascunho existente (guest-first, sem login).
